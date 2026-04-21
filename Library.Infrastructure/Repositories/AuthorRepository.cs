@@ -76,15 +76,37 @@ public class AuthorRepository : IAuthorRepository
         await _context.SaveChangesAsync();
     }
 
-    public async Task<List<Author>> SearchAsync(string query)
+    public async Task<List<SearchProjection>> SearchAsync(string query)
     {
-        var ef = await _context.Authors
-            .Where(a =>
-                EF.Functions.ILike(a.Name, $"%{query}%") ||
-                EF.Functions.TrigramsSimilarity(a.Name, query) > 0.3
-            )
-            .ToListAsync();
+        var terms = query
+            .ToLower()
+            .Split(' ', StringSplitOptions.RemoveEmptyEntries);
 
-        return ef.Select(AuthorMapper.ToDomain).ToList();
+        var authorsQuery = _context.Authors.AsQueryable();
+
+        foreach (var term in terms)
+        {
+            var t = term;
+
+            authorsQuery = authorsQuery.Where(b =>
+                EF.Functions.ILike(b.Name, $"%{t}%") ||
+                EF.Functions.TrigramsSimilarity(b.Name, t) > 0.3
+            );
+        }
+
+        return await authorsQuery
+            .Select(b => new SearchProjection
+            {
+                Type = "book",
+                Id = b.Id,
+                Title = b.Name,
+
+                Score = terms.Sum(t =>
+                    EF.Functions.TrigramsSimilarity(b.Name, t)
+                ) + (EF.Functions.ILike(b.Name, $"%{query}%") ? 1 : 0)
+            })
+            .OrderByDescending(x => x.Score)
+            .Take(10)
+            .ToListAsync();
     }
 }

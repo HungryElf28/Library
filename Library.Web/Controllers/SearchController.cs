@@ -21,29 +21,7 @@ namespace Library.Web.Controllers
         [HttpGet]
         public async Task<IActionResult> Search(string query)
         {
-            var (books, authors, genres) = await _service.GlobalSearchAsync(query);
-
-            var result = new SearchResultDto
-            {
-                Books = books.Select(b => new BookDto
-                {
-                    Id = b.Id,
-                    Title = b.Title
-                }).ToList(),
-
-                Authors = authors.Select(a => new AuthorDto
-                {
-                    Id = a.Id,
-                    Name = a.Name
-                }).ToList(),
-
-                Genres = genres.Select(g => new GenreDto
-                {
-                    Id = g.Id,
-                    Name = g.Name
-                }).ToList()
-            };
-
+            var result = await _service.GlobalSearchAsync(query);
             return Ok(result);
         }
     }

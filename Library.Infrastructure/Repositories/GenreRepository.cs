@@ -74,16 +74,38 @@ public class GenreRepository : IGenreRepository
         await _context.SaveChangesAsync();
     }
 
-    public async Task<List<Genre>> SearchAsync(string query)
+    public async Task<List<SearchProjection>> SearchAsync(string query)
     {
-        var ef = await _context.Genres
-            .Where(g =>
-                EF.Functions.ILike(g.Name, $"%{query}%") ||
-                EF.Functions.TrigramsSimilarity(g.Name, query) > 0.3
-            )
-            .ToListAsync();
+        var terms = query
+            .ToLower()
+            .Split(' ', StringSplitOptions.RemoveEmptyEntries);
 
-        return ef.Select(GenreMapper.ToDomain).ToList();
+        var genresQuery = _context.Genres.AsQueryable();
+
+        foreach (var term in terms)
+        {
+            var t = term;
+
+            genresQuery = genresQuery.Where(b =>
+                EF.Functions.ILike(b.Name, $"%{t}%") ||
+                EF.Functions.TrigramsSimilarity(b.Name, t) > 0.3
+            );
+        }
+
+        return await genresQuery
+            .Select(b => new SearchProjection
+            {
+                Type = "book",
+                Id = b.Id,
+                Title = b.Name,
+
+                Score = terms.Sum(t =>
+                    EF.Functions.TrigramsSimilarity(b.Name, t)
+                ) + (EF.Functions.ILike(b.Name, $"%{query}%") ? 1 : 0)
+            })
+            .OrderByDescending(x => x.Score)
+            .Take(10)
+            .ToListAsync();
     }
 
 }

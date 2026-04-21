@@ -5,7 +5,6 @@ using Library.Infrastructure.Data;
 using Library.Infrastructure.Mappers;
 
 using EfBook = Library.Infrastructure.Data.Models.Book;
-using Library.Infrastructure.Repositories.Models;
 namespace Library.Infrastructure.Repositories;
 
 public class BookRepository : IBookRepository
@@ -131,17 +130,33 @@ public class BookRepository : IBookRepository
 
     public async Task<List<SearchProjection>> SearchAsync(string query)
     {
-        return await _context.Books
-            .Where(b =>
-                EF.Functions.ILike(b.Title, $"%{query}%") ||
-                EF.Functions.TrigramsSimilarity(b.Title, query) > 0.3
-            )
+        var terms = query
+            .ToLower()
+            .Split(' ', StringSplitOptions.RemoveEmptyEntries);
+
+        var booksQuery = _context.Books.AsQueryable();
+
+        // 🔥 AND логика
+        foreach (var term in terms)
+        {
+            var t = term; // важно для EF
+
+            booksQuery = booksQuery.Where(b =>
+                EF.Functions.ILike(b.Title, $"%{t}%") ||
+                EF.Functions.TrigramsSimilarity(b.Title, t) > 0.3
+            );
+        }
+
+        return await booksQuery
             .Select(b => new SearchProjection
             {
                 Type = "book",
                 Id = b.Id,
                 Title = b.Title,
-                Score = EF.Functions.TrigramsSimilarity(b.Title, query) * 2 
+
+                Score = terms.Sum(t =>
+                    EF.Functions.TrigramsSimilarity(b.Title, t)
+                ) + (EF.Functions.ILike(b.Title, $"%{query}%") ? 1 : 0)
             })
             .OrderByDescending(x => x.Score)
             .Take(10)
