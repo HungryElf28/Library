@@ -13,5 +13,8 @@ namespace Library.Domain.Interfaces
         Task<bool> ExistsByLoginAsync(string login);
         Task<User?> GetByLoginAsync(string login);
         Task<(User user, string passwordHash)?> GetWithPasswordAsync(string login);
+        Task AddToFavoritesAsync(int userId, int bookId);
+        Task RemoveFromFavoritesAsync(int userId, int bookId);
+        Task<List<Book>> GetFavoritesAsync(int userId);
     }
 }
