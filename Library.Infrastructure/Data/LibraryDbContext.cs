@@ -251,6 +251,10 @@ public partial class LibraryDbContext : DbContext
                 .HasForeignKey(d => d.UserId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("Reviews_user_id_fkey");
+
+            entity.HasIndex(e => new { e.UserId, e.BookId })
+                .IsUnique()
+                .HasDatabaseName("UX_Reviews_User_Book");
         });
 
         modelBuilder.Entity<Role>(entity =>

@@ -3,6 +3,7 @@ using Library.Web.DTO.Books;
 using Library.Domain.Entities;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Library.Web.Extensions;
 
 namespace Library.Web.Controllers
 {
@@ -94,8 +95,39 @@ namespace Library.Web.Controllers
         [HttpDelete("{id}")]
         public async Task<IActionResult> Delete(int id)
         {
+            if (!User.IsAdmin())
+                return Forbid();
             await _service.DeleteAsync(id);
             return NoContent();
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> Get([FromQuery] BookQueryDto query)
+        {
+            var page = query.Page < 1 ? 1 : query.Page;
+            var pageSize = Math.Min(query.PageSize, 50);
+
+            var (books, total) = await _service.GetPaged(
+                query.GenreId,
+                query.AuthorId,
+                page,
+                pageSize,
+                query.SortBy,
+                query.SortOrder
+            );
+
+            return Ok(new
+            {
+                Total = total,
+                Page = page,
+                PageSize = pageSize,
+                Items = books.Select(b => new
+                {
+                    b.Id,
+                    b.Title,
+                    b.CoverFile
+                })
+            });
         }
     }
 }

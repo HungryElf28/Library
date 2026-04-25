@@ -5,6 +5,8 @@ using Library.Infrastructure.Data;
 using Library.Infrastructure.Mappers;
 
 using EfBook = Library.Infrastructure.Data.Models.Book;
+using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
+//using Library.Infrastructure.Data.Models;
 namespace Library.Infrastructure.Repositories;
 
 public class BookRepository : IBookRepository
@@ -60,48 +62,48 @@ public class BookRepository : IBookRepository
 
     public async Task UpdateAsync(Book newBook)
 {
-    var oldBook = await _context.Books
-        .Include(b => b.Authors)
-        .Include(b => b.Genres)
-        .Include(b => b.Tags)
-        .FirstOrDefaultAsync(b => b.Id == newBook.Id);
+        var oldBook = await _context.Books
+            .Include(b => b.Authors)
+            .Include(b => b.Genres)
+            .Include(b => b.Tags)
+            .FirstOrDefaultAsync(b => b.Id == newBook.Id);
 
-    if (oldBook == null)
-        throw new Exception("Book not found");
+        if (oldBook == null)
+            throw new Exception("Book not found");
 
-    oldBook.Title = newBook.Title;
-    oldBook.TextFile = newBook.TextFile;
-    oldBook.CoverFile = newBook.CoverFile;
-    oldBook.Description = newBook.Description;
+        oldBook.Title = newBook.Title;
+        oldBook.TextFile = newBook.TextFile;
+        oldBook.CoverFile = newBook.CoverFile;
+        oldBook.Description = newBook.Description;
 
-    var authorIds = newBook.Authors.Select(a => a.Id).ToList();
-    var authors = await _context.Authors
-        .Where(a => authorIds.Contains(a.Id))
-        .ToListAsync();
+        var authorIds = newBook.Authors.Select(a => a.Id).ToList();
+        var authors = await _context.Authors
+            .Where(a => authorIds.Contains(a.Id))
+            .ToListAsync();
 
-    oldBook.Authors.Clear();
-    foreach (var a in authors)
-        oldBook.Authors.Add(a);
+        oldBook.Authors.Clear();
+        foreach (var a in authors)
+            oldBook.Authors.Add(a);
 
-    var genreIds = newBook.Genres.Select(g => g.Id).ToList();
-    var genres = await _context.Genres
-        .Where(g => genreIds.Contains(g.Id))
-        .ToListAsync();
+        var genreIds = newBook.Genres.Select(g => g.Id).ToList();
+        var genres = await _context.Genres
+            .Where(g => genreIds.Contains(g.Id))
+            .ToListAsync();
 
-    oldBook.Genres.Clear();
-    foreach (var g in genres)
-        oldBook.Genres.Add(g);
+        oldBook.Genres.Clear();
+        foreach (var g in genres)
+            oldBook.Genres.Add(g);
 
-    var tagIds = newBook.Tags.Select(t => t.Id).ToList();
-    var tags = await _context.Tags
-        .Where(t => tagIds.Contains(t.Id))
-        .ToListAsync();
+        var tagIds = newBook.Tags.Select(t => t.Id).ToList();
+        var tags = await _context.Tags
+            .Where(t => tagIds.Contains(t.Id))
+            .ToListAsync();
 
-    oldBook.Tags.Clear();
-    foreach (var t in tags)
-        oldBook.Tags.Add(t);
+        oldBook.Tags.Clear();
+        foreach (var t in tags)
+            oldBook.Tags.Add(t);
 
-    await _context.SaveChangesAsync();
+        await _context.SaveChangesAsync();
 }
 
     public async Task DeleteAsync(int id)
@@ -161,5 +163,49 @@ public class BookRepository : IBookRepository
             .OrderByDescending(x => x.Score)
             .Take(10)
             .ToListAsync();
+    }
+
+    public async Task<(List<Book> Items, int TotalCount)> GetPagedAsync(int? genreId, int? authorId, int page, int pageSize, BookSortBy sortBy, BookSortOrder sortOrder)
+    {
+        var query = _context.Books.AsQueryable();
+
+        if (genreId.HasValue)
+        {
+            query = query.Where(b => b.Genres.Any(g => g.Id == genreId));
+        }
+
+        if (authorId.HasValue)
+        {
+            query = query.Where(b => b.Authors.Any(a => a.Id == authorId));
+        }
+
+        query = sortBy switch
+        {
+            BookSortBy.Title => sortOrder == BookSortOrder.Desc
+                ? query.OrderByDescending(b => b.Title)
+                : query.OrderBy(b => b.Title),
+
+            BookSortBy.Rate => sortOrder == BookSortOrder.Desc
+                ? query.OrderByDescending(b => b.Rating)
+                : query.OrderBy(b => b.Rating),
+
+            _ => query.OrderBy(b => b.Id)
+        };
+
+        var total = await query.CountAsync();
+
+        var items = await query
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
+            .Select(b => new Book(
+                b.Id,
+                b.Title,
+                b.TextFile,
+                b.CoverFile,
+                b.Description
+            ))
+            .ToListAsync();
+
+        return (items, total);
     }
 }

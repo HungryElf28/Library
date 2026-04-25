@@ -5,6 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using Library.Domain.Entities;
 using Library.Domain.Interfaces;
+using Library.Application.Common.Enums;
 
 namespace Library.Application.Services
 {
@@ -41,5 +42,10 @@ namespace Library.Application.Services
         {
             await _repo.DeleteAsync(id);
         }
+        public async Task<(List<Book>, int)> GetPaged(int? genreId, int? authorId, int page, int pageSize, BookSortBy sortBy, BookSortOrder sortOrder)
+        {
+            return await _repo.GetPagedAsync(genreId, authorId, page, pageSize, sortBy, sortOrder);
+        }
+
     }
 }

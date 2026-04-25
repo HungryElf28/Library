@@ -26,8 +26,9 @@ public class AuthService
 
         var hasher = new PasswordHasher<User>();
         var hash = hasher.HashPassword(user, password);
+        var roleId = await _repo.GetRoleIdByNameAsync("User");
 
-        await _repo.AddAsync(user, hash);
+        await _repo.AddAsync(user, hash, roleId);
     }
 
     public async Task<string?> LoginAsync(string login, string password)
@@ -54,7 +55,8 @@ public class AuthService
         var claims = new[]
         {
             new Claim(ClaimTypes.Name, user.Login),
-            new Claim(ClaimTypes.NameIdentifier, user.Id.ToString())
+            new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
+            new Claim(ClaimTypes.Role, "Admin")
         };
 
         var key = new SymmetricSecurityKey(

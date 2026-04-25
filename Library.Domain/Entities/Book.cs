@@ -46,4 +46,16 @@ namespace Library.Domain.Entities
                 Tags.Add(tag);
         }
     }
+
+    public enum BookSortBy
+    {
+        Title,
+        Rate
+    }
+
+    public enum BookSortOrder
+    {
+        Asc,
+        Desc
+    }
 }

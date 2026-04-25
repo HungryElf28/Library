@@ -4,6 +4,7 @@ using Library.Domain.Entities;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Library.Web.DTO.Books;
+using Library.Web.Extensions;
 
 namespace Library.Web.Controllers
 {
@@ -63,6 +64,8 @@ namespace Library.Web.Controllers
         [HttpDelete("{id}")]
         public async Task<IActionResult> Delete(int id)
         {
+            if (!User.IsAdmin())
+                return Forbid();
             await _service.DeleteAsync(id);
             return NoContent();
         }

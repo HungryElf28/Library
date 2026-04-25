@@ -15,7 +15,11 @@ public class UserRepository : IUserRepository
         _context = context;
     }
 
-    public async Task AddAsync(User user, string passwordHash)
+    // =========================
+    // 🔐 AUTH
+    // =========================
+
+    public async Task AddAsync(User user, string passwordHash, int roleId)
     {
         var ef = new Data.Models.User
         {
@@ -24,7 +28,7 @@ public class UserRepository : IUserRepository
             PasswordHash = passwordHash,
             NormalizedLogin = user.Login.ToUpper(),
             NormalizedEmail = user.Email.ToUpper(),
-            RoleId = 1
+            RoleId = roleId
         };
 
         _context.Users.Add(ef);
@@ -45,7 +49,7 @@ public class UserRepository : IUserRepository
         return ef == null ? null : UserMapper.ToDomain(ef);
     }
 
-    public async Task<(User, string)?> GetWithPasswordAsync(string login)
+    public async Task<(User user, string passwordHash)?> GetWithPasswordAsync(string login)
     {
         var ef = await _context.Users
             .FirstOrDefaultAsync(u => u.Login == login);
@@ -55,6 +59,27 @@ public class UserRepository : IUserRepository
 
         return (UserMapper.ToDomain(ef), ef.PasswordHash);
     }
+
+    // 🔥 ВАЖНО: для ролей
+    public async Task<(User user, string passwordHash, string roleName)?> GetWithRoleAsync(string login)
+    {
+        var ef = await _context.Users
+            .Include(u => u.Role)
+            .FirstOrDefaultAsync(u => u.Login == login);
+
+        if (ef == null)
+            return null;
+
+        return (
+            UserMapper.ToDomain(ef),
+            ef.PasswordHash,
+            ef.Role.Role1 // 👈 ключевое
+        );
+    }
+
+    // =========================
+    // ⭐ FAVORITES
+    // =========================
 
     public async Task AddToFavoritesAsync(int userId, int bookId)
     {
@@ -103,5 +128,64 @@ public class UserRepository : IUserRepository
         return user.Books
             .Select(BookMapper.ToDomain)
             .ToList();
+    }
+
+    public async Task<int> GetRoleIdByNameAsync(string roleName)
+    {
+        return await _context.Roles
+            .Where(r => r.Role1 == roleName)
+            .Select(r => r.Id)
+            .FirstAsync();
+    }
+
+    public async Task SaveProgressAsync(int userId, int bookId, int page)
+    {
+        var entity = await _context.ReadingBooks
+            .FirstOrDefaultAsync(r => r.UserId == userId && r.BookId == bookId);
+
+        var today = DateOnly.FromDateTime(DateTime.UtcNow);
+
+        if (entity == null)
+        {
+            entity = new Data.Models.ReadingBook
+            {
+                UserId = userId,
+                BookId = bookId,
+                Page = page,
+                LastOpened = today
+            };
+
+            _context.ReadingBooks.Add(entity);
+        }
+        else
+        {
+            entity.Page = page;
+            entity.LastOpened = today; // 🔥 обновляем
+        }
+
+        await _context.SaveChangesAsync();
+    }
+
+    public async Task<int?> GetProgressAsync(int userId, int bookId)
+    {
+        var entity = await _context.ReadingBooks
+            .FirstOrDefaultAsync(r => r.UserId == userId && r.BookId == bookId);
+
+        return entity?.Page;
+    }
+
+    public async Task<List<ReadingBook>> GetReadingAsync(int userId)
+    {
+        return await _context.ReadingBooks
+            .Where(r => r.UserId == userId)
+            .OrderByDescending(r => r.LastOpened)
+            .Select(r => new ReadingBook(
+                r.Book.Id,
+                r.Book.Title,
+                r.Book.CoverFile,
+                r.Page,
+                r.LastOpened
+            ))
+            .ToListAsync();
     }
 }

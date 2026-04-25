@@ -15,5 +15,6 @@ namespace Library.Domain.Interfaces
         Task UpdateAsync(Book newBook);
         Task DeleteAsync(int id);
         Task<List<SearchProjection>> SearchAsync(string query);
+        Task<(List<Book> Items, int TotalCount)> GetPagedAsync(int? genreId, int? authorId, int page, int pageSize, BookSortBy sortBy, BookSortOrder sortOrder);
     }
 }

@@ -58,5 +58,24 @@ namespace Library.Web.Controllers
 
             return Ok(result);
         }
+
+        [HttpGet("reading")]
+        public async Task<IActionResult> GetReading()
+        {
+            var userId = User.GetUserId();
+
+            var books = await _service.GetReading(userId);
+
+            var result = books.Select(b => new
+            {
+                b.BookId,
+                b.Title,
+                b.CoverFile,
+                b.Page,
+                b.LastOpened
+            });
+
+            return Ok(result);
+        }
     }
 }

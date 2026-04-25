@@ -31,5 +31,10 @@ namespace Library.Application.Services
         {
             return await _repo.GetFavoritesAsync(userId);
         }
+
+        public async Task<List<ReadingBook>> GetReading(int userId)
+        {
+            return await _repo.GetReadingAsync(userId);
+        }
     }
 }
