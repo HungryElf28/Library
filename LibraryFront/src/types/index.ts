@@ -95,8 +95,8 @@ export interface CreateReviewDto {
 
 export interface CreateBookDto {
   title: string;
-  textFile: string;
-  coverFile?: string;
+  textFile?: File | string;
+  coverFile?: File | string;
   description?: string;
   authorIds: number[];
   genreIds: number[];

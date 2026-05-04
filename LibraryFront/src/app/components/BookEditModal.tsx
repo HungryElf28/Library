@@ -54,21 +54,21 @@ export function BookEditModal({ book, onClose, onSave }: BookEditModalProps) {
     form.append('Title', formData.title);
     form.append('Description', formData.description || '');
 
-    if (formData.textFile)
+    if (formData.textFile instanceof File)
       form.append('TextFile', formData.textFile);
 
-    if (formData.coverFile)
+    if (formData.coverFile instanceof File)
       form.append('CoverFile', formData.coverFile);
 
-    formData.authorIds.forEach(id =>
+    formData.authorIds.forEach((id: number) =>
       form.append('AuthorIds', id.toString())
     );
 
-    formData.genreIds.forEach(id =>
+    formData.genreIds.forEach((id: number) =>
       form.append('GenreIds', id.toString())
     );
 
-    formData.tagIds.forEach(id =>
+    formData.tagIds.forEach((id: number) =>
       form.append('TagIds', id.toString())
     );
 
@@ -88,28 +88,28 @@ export function BookEditModal({ book, onClose, onSave }: BookEditModalProps) {
 };
 
   const toggleAuthor = (authorId: number) => {
-    setFormData(prev => ({
+    setFormData((prev: CreateBookDto) => ({
       ...prev,
       authorIds: prev.authorIds.includes(authorId)
-        ? prev.authorIds.filter(id => id !== authorId)
+        ? prev.authorIds.filter((id: number) => id !== authorId)
         : [...prev.authorIds, authorId],
     }));
   };
 
   const toggleGenre = (genreId: number) => {
-    setFormData(prev => ({
+    setFormData((prev: CreateBookDto) => ({
       ...prev,
       genreIds: prev.genreIds.includes(genreId)
-        ? prev.genreIds.filter(id => id !== genreId)
+        ? prev.genreIds.filter((id: number) => id !== genreId)
         : [...prev.genreIds, genreId],
     }));
   };
 
   const toggleTag = (tagId: number) => {
-    setFormData(prev => ({
+    setFormData((prev: CreateBookDto) => ({
       ...prev,
       tagIds: prev.tagIds.includes(tagId)
-        ? prev.tagIds.filter(id => id !== tagId)
+        ? prev.tagIds.filter((id: number) => id !== tagId)
         : [...prev.tagIds, tagId],
     }));
   };
@@ -134,7 +134,7 @@ export function BookEditModal({ book, onClose, onSave }: BookEditModalProps) {
             <input
               type="text"
               value={formData.title}
-              onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormData({ ...formData, title: e.target.value })}
               required
               className="w-full px-3 py-2 border border-amber-300 dark:border-stone-600 bg-card rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500"
               placeholder="Введите название книги"
@@ -147,7 +147,7 @@ export function BookEditModal({ book, onClose, onSave }: BookEditModalProps) {
             </label>
             <textarea
               value={formData.description}
-              onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+              onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setFormData({ ...formData, description: e.target.value })}
               rows={4}
               className="w-full px-3 py-2 border border-amber-300 dark:border-stone-600 bg-card rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500"
               placeholder="Введите описание книги"
@@ -160,43 +160,45 @@ export function BookEditModal({ book, onClose, onSave }: BookEditModalProps) {
             </label>
             <input
               type="file"
-  accept=".epub,.txt"
-              value={formData.textFile}
-               onChange={(e) =>
-    setFormData({
-      ...formData,
-      textFile: e.target.files?.[0]
-    })  }
-              required
+              accept=".epub,.fb2,.txt,.rtf,.pdf,.mobi,.azw3"
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                setFormData({
+                  ...formData,
+                  textFile: e.target.files?.[0]
+                })
+              }
+              required={!book}
               className="w-full px-3 py-2 border border-amber-300 dark:border-stone-600 bg-card rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500"
-              placeholder="/books/book.txt"
             />
+            {typeof formData.textFile === 'string' && formData.textFile && (
+              <p className="mt-2 text-sm text-gray-600">Текущий файл: {formData.textFile}</p>
+            )}
           </div>
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              URL обложки
+              Обложка
             </label>
             <input
-                type="file"
-  accept="image/*"
-              value={formData.coverFile}
-              onChange={(e) =>
-    setFormData({
-      ...formData,
-      coverFile: e.target.files?.[0]
-    })
-  }
+              type="file"
+              accept="image/*"
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                setFormData({
+                  ...formData,
+                  coverFile: e.target.files?.[0]
+                })
+              }
               className="w-full px-3 py-2 border border-amber-300 dark:border-stone-600 bg-card rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500"
-              placeholder="https://example.com/cover.jpg"
             />
-            {/* 👇 ВОТ СЮДА ДОБАВЛЯЕШЬ ПРЕВЬЮ */}
-  {formData.coverFile && (
-    <img
-      src={URL.createObjectURL(formData.coverFile)}
-      className="w-32 mt-2 rounded shadow"
-    />
-  )}
+            {typeof formData.coverFile === 'string' && formData.coverFile && (
+              <p className="mt-2 text-sm text-gray-600">Текущая обложка: {formData.coverFile}</p>
+            )}
+            {formData.coverFile instanceof File && (
+              <img
+                src={URL.createObjectURL(formData.coverFile)}
+                className="w-32 mt-2 rounded shadow"
+              />
+            )}
           </div>
 
           <div>

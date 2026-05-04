@@ -6,6 +6,7 @@ using Microsoft.Extensions.FileProviders;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
+using Microsoft.AspNetCore.StaticFiles;
 using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -49,7 +50,7 @@ builder.Services.AddCors(options =>
     options.AddPolicy("AllowFrontend", policy =>
     {
         policy
-            .WithOrigins("http://localhost:3000", "http://127.0.0.1:3000")
+            .WithOrigins("http://localhost:3000", "http://127.0.0.1:3000", "http://localhost:5173", "http://127.0.0.1:5173")
             .AllowAnyHeader()
             .AllowAnyMethod()
             .AllowCredentials();
@@ -73,10 +74,30 @@ Directory.CreateDirectory(uploadsPath);
 
 app.UseHttpsRedirection();
 
+var contentTypeProvider = new FileExtensionContentTypeProvider();
+contentTypeProvider.Mappings[".epub"] = "application/epub+zip";
+contentTypeProvider.Mappings[".fb2"] = "application/x-fictionbook+xml";
+contentTypeProvider.Mappings[".rtf"] = "application/rtf";
+contentTypeProvider.Mappings[".mobi"] = "application/x-mobipocket-ebook";
+contentTypeProvider.Mappings[".azw3"] = "application/vnd.amazon.ebook";
+
 app.UseStaticFiles(new StaticFileOptions
 {
     FileProvider = new PhysicalFileProvider(uploadsPath),
-    RequestPath = ""
+    RequestPath = "/uploads",
+    ContentTypeProvider = contentTypeProvider,
+    OnPrepareResponse = context =>
+    {
+        var origin = context.Context.Request.Headers.Origin.ToString();
+        if (origin == "http://localhost:3000"
+            || origin == "http://127.0.0.1:3000"
+            || origin == "http://localhost:5173"
+            || origin == "http://127.0.0.1:5173")
+        {
+            context.Context.Response.Headers.AccessControlAllowOrigin = origin;
+            context.Context.Response.Headers.Vary = "Origin";
+        }
+    }
 });
 
 app.UseCors("AllowFrontend");

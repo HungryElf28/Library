@@ -1,5 +1,8 @@
 ﻿using Library.Application.Services;
+using Library.Web.DTO.Authors;
 using Library.Web.DTO.Books;
+using Library.Web.DTO.Genres;
+using Library.Web.DTO.Tags;
 using Library.Domain.Entities;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -11,6 +14,26 @@ namespace Library.Web.Controllers
     [Route("api/books")]
     public class BooksController : ControllerBase
     {
+        private static readonly HashSet<string> AllowedBookExtensions = new(StringComparer.OrdinalIgnoreCase)
+        {
+            ".epub",
+            ".fb2",
+            ".txt",
+            ".rtf",
+            ".pdf",
+            ".mobi",
+            ".azw3"
+        };
+
+        private static readonly HashSet<string> AllowedCoverExtensions = new(StringComparer.OrdinalIgnoreCase)
+        {
+            ".jpg",
+            ".jpeg",
+            ".png",
+            ".webp",
+            ".gif"
+        };
+
         private readonly BookService _service;
 
         public BooksController(BookService service)
@@ -33,134 +56,72 @@ namespace Library.Web.Controllers
                 TextFile = book.TextFile,
                 CoverFile = book.CoverFile,
                 Description = book.Description,
-                Authors = book.Authors.Select(a => a.Name).ToList(),
-                Genres = book.Genres.Select(g => g.Name).ToList(),
-                Tags = book.Tags.Select(t => t.Name).ToList()
+                Authors = book.Authors.Select(a => new AuthorDto { Id = a.Id, Name = a.Name }).ToList(),
+                Genres = book.Genres.Select(g => new GenreDto { Id = g.Id, Name = g.Name }).ToList(),
+                Tags = book.Tags.Select(t => new TagDto { Id = t.Id, Name = t.Name }).ToList()
             };
 
             return Ok(result);
         }
 
-[HttpPost]
-public async Task<IActionResult> Create([FromForm] CreateBookDto dto)
-{
-    string? coverUrl = null;
-    string? textUrl = null;
-
-    var uploadsPath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot/uploads");
-
-    if (!Directory.Exists(uploadsPath))
-    {
-        Directory.CreateDirectory(uploadsPath);
-    }
-
-    if (dto.CoverFile != null)
-    {
-        var fileName = Guid.NewGuid() + Path.GetExtension(dto.CoverFile.FileName);
-        var path = Path.Combine(uploadsPath, fileName);
-
-        using (var stream = new FileStream(path, FileMode.Create))
+        [HttpPost]
+        public async Task<IActionResult> Create([FromForm] CreateBookDto dto)
         {
-            await dto.CoverFile.CopyToAsync(stream);
+            if (dto.TextFile == null)
+                return BadRequest("Book file is required.");
+            if (!IsAllowedExtension(dto.TextFile, AllowedBookExtensions))
+                return BadRequest("Unsupported book file extension.");
+            if (dto.CoverFile != null && !IsAllowedExtension(dto.CoverFile, AllowedCoverExtensions))
+                return BadRequest("Unsupported cover file extension.");
+
+            var uploadsPath = EnsureUploadsPath();
+            var textUrl = await SaveUploadedFile(dto.TextFile, uploadsPath);
+            var coverUrl = dto.CoverFile == null
+                ? null
+                : await SaveUploadedFile(dto.CoverFile, uploadsPath);
+
+            var book = BuildBook(0, dto.Title, textUrl, coverUrl, dto.Description, dto.AuthorIds, dto.GenreIds, dto.TagIds);
+
+            await _service.AddAsync(book);
+
+            return Ok(new { book.Title, book.TextFile, book.CoverFile, book.Description });
         }
 
-        coverUrl = $"{Request.Scheme}://{Request.Host}/uploads/{fileName}";
-    }
-
-    if (dto.TextFile != null)
-    {
-        var fileName = Guid.NewGuid() + Path.GetExtension(dto.TextFile.FileName);
-        var path = Path.Combine(uploadsPath, fileName);
-
-        using (var stream = new FileStream(path, FileMode.Create))
+        [HttpPut("{id}")]
+        public async Task<IActionResult> Update(int id, [FromForm] UpdateBookDto dto)
         {
-            await dto.TextFile.CopyToAsync(stream);
+            var existing = await _service.GetByIdAsync(id);
+            if (existing == null)
+                return NotFound();
+
+            var uploadsPath = EnsureUploadsPath();
+            var coverUrl = existing.CoverFile;
+            var textUrl = existing.TextFile;
+
+            if (dto.CoverFile != null)
+            {
+                if (!IsAllowedExtension(dto.CoverFile, AllowedCoverExtensions))
+                    return BadRequest("Unsupported cover file extension.");
+
+                coverUrl = await SaveUploadedFile(dto.CoverFile, uploadsPath);
+                _service.DeleteFileIfExists(existing.CoverFile);
+            }
+
+            if (dto.TextFile != null)
+            {
+                if (!IsAllowedExtension(dto.TextFile, AllowedBookExtensions))
+                    return BadRequest("Unsupported book file extension.");
+
+                textUrl = await SaveUploadedFile(dto.TextFile, uploadsPath);
+                _service.DeleteFileIfExists(existing.TextFile);
+            }
+
+            var book = BuildBook(id, dto.Title, textUrl, coverUrl, dto.Description, dto.AuthorIds, dto.GenreIds, dto.TagIds);
+
+            await _service.UpdateAsync(book);
+
+            return Ok(new { book.Id, book.Title, book.TextFile, book.CoverFile, book.Description });
         }
-
-        textUrl = $"{Request.Scheme}://{Request.Host}/uploads/{fileName}";
-    }
-
-    var book = new Book(
-        0,
-        dto.Title,
-        textUrl,
-        coverUrl,
-        dto.Description
-    );
-
-    book.Authors.AddRange(dto.AuthorIds.Select(id => new Author(id, "", "", "")));
-    book.Genres.AddRange(dto.GenreIds.Select(id => new Genre(id, "")));
-    book.Tags.AddRange(dto.TagIds.Select(id => new Tag(id, "")));
-
-    await _service.AddAsync(book);
-
-    return Ok();
-}
-
-[HttpPut("{id}")]
-public async Task<IActionResult> Update(int id, [FromForm] UpdateBookDto dto)
-{
-    var existing = await _service.GetByIdAsync(id);
-    if (existing == null)
-        return NotFound();
-
-    string? coverUrl = existing.CoverFile;
-    string? textUrl = existing.TextFile;
-
-    var uploadsPath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot/uploads");
-
-    if (!Directory.Exists(uploadsPath))
-    {
-        Directory.CreateDirectory(uploadsPath);
-    }
-
-
-    if (dto.CoverFile != null)
-    {
-        _service.DeleteFileIfExists(existing.CoverFile);
-
-        var fileName = Guid.NewGuid() + Path.GetExtension(dto.CoverFile.FileName);
-        var path = Path.Combine(uploadsPath, fileName);
-
-        using (var stream = new FileStream(path, FileMode.Create))
-        {
-            await dto.CoverFile.CopyToAsync(stream);
-        }
-
-        coverUrl = $"{Request.Scheme}://{Request.Host}/uploads/{fileName}";
-    }
-
-    if (dto.TextFile != null)
-    {
-        _service.DeleteFileIfExists(existing.TextFile);
-
-        var fileName = Guid.NewGuid() + Path.GetExtension(dto.TextFile.FileName);
-        var path = Path.Combine(uploadsPath, fileName);
-
-        using (var stream = new FileStream(path, FileMode.Create))
-        {
-            await dto.TextFile.CopyToAsync(stream);
-        }
-
-        textUrl = $"{Request.Scheme}://{Request.Host}/uploads/{fileName}";
-    }
-
-    var book = new Book(
-        id,
-        dto.Title,
-        textUrl,
-        coverUrl,
-        dto.Description
-    );
-
-    book.Authors.AddRange(dto.AuthorIds.Select(id => new Author(id, "", "", "")));
-    book.Genres.AddRange(dto.GenreIds.Select(id => new Genre(id, "")));
-    book.Tags.AddRange(dto.TagIds.Select(id => new Tag(id, "")));
-
-    await _service.UpdateAsync(book);
-
-    return Ok();
-}
 
         [HttpDelete("{id}")]
         public async Task<IActionResult> Delete(int id)
@@ -199,6 +160,51 @@ public async Task<IActionResult> Update(int id, [FromForm] UpdateBookDto dto)
                     Authors = b.Authors.Select(a => a.Name).ToList()
                 })
             });
+        }
+
+        private string EnsureUploadsPath()
+        {
+            var uploadsPath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "uploads");
+            Directory.CreateDirectory(uploadsPath);
+            return uploadsPath;
+        }
+
+        private static bool IsAllowedExtension(IFormFile file, HashSet<string> allowedExtensions)
+        {
+            return allowedExtensions.Contains(Path.GetExtension(file.FileName));
+        }
+
+        private async Task<string> SaveUploadedFile(IFormFile file, string uploadsPath)
+        {
+            var extension = Path.GetExtension(file.FileName);
+            var fileName = $"{Guid.NewGuid()}{extension.ToLowerInvariant()}";
+            var path = Path.Combine(uploadsPath, fileName);
+
+            await using (var stream = new FileStream(path, FileMode.Create))
+            {
+                await file.CopyToAsync(stream);
+            }
+
+            return $"{Request.Scheme}://{Request.Host}/uploads/{fileName}";
+        }
+
+        private static Book BuildBook(
+            int id,
+            string title,
+            string textUrl,
+            string? coverUrl,
+            string? description,
+            List<int> authorIds,
+            List<int> genreIds,
+            List<int> tagIds)
+        {
+            var book = new Book(id, title, textUrl, coverUrl, description);
+
+            book.Authors.AddRange(authorIds.Select(authorId => new Author(authorId, "", "", "")));
+            book.Genres.AddRange(genreIds.Select(genreId => new Genre(genreId, "")));
+            book.Tags.AddRange(tagIds.Select(tagId => new Tag(tagId, "")));
+
+            return book;
         }
     }
 }

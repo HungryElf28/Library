@@ -41,8 +41,9 @@ let currentUser: User | null = null;
 let authToken: string | null = localStorage.getItem(STORAGE_KEY);
 
 async function fetchWithAuth(url: string, options: RequestInit = {}): Promise<Response> {
+  const isFormData = options.body instanceof FormData;
   const headers: HeadersInit = {
-    'Content-Type': 'application/json',
+    ...(isFormData ? {} : { 'Content-Type': 'application/json' }),
     ...options.headers,
   };
 
@@ -151,45 +152,20 @@ export const api = {
       return response.json();
     },
 
-    async create(data: CreateBookDto): Promise<Book> {
-  await delay(500);
+    async create(data: FormData): Promise<Book> {
+      await delay(500);
+      const response = await fetchWithAuth(`${API_BASE}/api/books`, {
+        method: 'POST',
+        body: data,
+      });
+      return response.json();
+    },
 
-  const form = new FormData();
-
-  form.append('Title', data.title);
-  form.append('Description', data.description || '');
-
-  if (data.textFile)
-    form.append('TextFile', data.textFile);
-
-  if (data.coverFile)
-    form.append('CoverFile', data.coverFile);
-
-  data.authorIds?.forEach(id =>
-    form.append('AuthorIds', id.toString())
-  );
-
-  data.genreIds?.forEach(id =>
-    form.append('GenreIds', id.toString())
-  );
-
-  data.tagIds?.forEach(id =>
-    form.append('TagIds', id.toString())
-  );
-
-  const response = await fetchWithAuth(`${API_BASE}/api/books`, {
-    method: 'POST',
-    body: form,
-  });
-
-  return response.json();
-},
-
-    async update(id: number, data: UpdateBookDto): Promise<Book> {
+    async update(id: number, data: FormData): Promise<Book> {
       await delay(500);
       const response = await fetchWithAuth(`${API_BASE}/api/books/${id}`, {
         method: 'PUT',
-        body: JSON.stringify(data),
+        body: data,
       });
       return response.json();
     },

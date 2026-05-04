@@ -1,4 +1,8 @@
-﻿namespace Library.Web.DTO.Books
+﻿using Library.Web.DTO.Authors;
+using Library.Web.DTO.Genres;
+using Library.Web.DTO.Tags;
+
+namespace Library.Web.DTO.Books
 {
     public class BookDetailsDto
     {
@@ -8,8 +12,8 @@
         public string? CoverFile { get; set; }
         public string? Description { get; set; }
 
-        public List<string> Authors { get; set; }
-        public List<string> Genres { get; set; }
-        public List<string> Tags { get; set; }
+        public List<AuthorDto> Authors { get; set; }
+        public List<GenreDto> Genres { get; set; }
+        public List<TagDto> Tags { get; set; }
     }
 }
