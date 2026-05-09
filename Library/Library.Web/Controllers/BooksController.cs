@@ -165,6 +165,7 @@ namespace Library.Web.Controllers
             var pageSize = Math.Min(query.PageSize, 50);
 
             var (books, total) = await _service.GetPaged(
+                query.SearchTerm,
                 query.GenreId,
                 query.AuthorId,
                 page,

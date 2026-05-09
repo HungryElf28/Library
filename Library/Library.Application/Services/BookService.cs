@@ -42,9 +42,9 @@ namespace Library.Application.Services
         {
             await _repo.DeleteAsync(id);
         }
-        public async Task<(List<Book>, int)> GetPaged(int? genreId, int? authorId, int page, int pageSize, BookSortBy sortBy, BookSortOrder sortOrder)
+        public async Task<(List<Book>, int)> GetPaged(string? searchTerm, int? genreId, int? authorId, int page, int pageSize, BookSortBy sortBy, BookSortOrder sortOrder)
         {
-            return await _repo.GetPagedAsync(genreId, authorId, page, pageSize, sortBy, sortOrder);
+            return await _repo.GetPagedAsync(searchTerm, genreId, authorId, page, pageSize, sortBy, sortOrder);
         }
 
         public async Task<List<Book>> GetRecommendationsAsync(int userId, IUserRepository userRepo)
@@ -53,7 +53,7 @@ namespace Library.Application.Services
             if (!favorites.Any())
             {
                 // Return top rated or latest if no favorites
-                var (items, _) = await _repo.GetPagedAsync(null, null, 1, 10, BookSortBy.Rate, BookSortOrder.Desc);
+                var (items, _) = await _repo.GetPagedAsync(null, null, null, 1, 10, BookSortBy.Rate, BookSortOrder.Desc);
                 return items;
             }
 
@@ -62,7 +62,7 @@ namespace Library.Application.Services
             var recommendations = new List<Book>();
             foreach (var genreId in favoriteGenreIds)
             {
-                var (items, _) = await _repo.GetPagedAsync(genreId, null, 1, 5, BookSortBy.Rate, BookSortOrder.Desc);
+                var (items, _) = await _repo.GetPagedAsync(null, genreId, null, 1, 5, BookSortBy.Rate, BookSortOrder.Desc);
                 recommendations.AddRange(items);
             }
 

@@ -175,8 +175,13 @@ export const api = {
   },
 
   authors: {
-    async getAll(): Promise<Author[]> {
-      const response = await fetchWithAuth(`${API_BASE}/api/authors`, {
+    async getAll(params: { searchTerm?: string; page?: number; pageSize?: number } = {}): Promise<PaginatedResponse<Author>> {
+      const queryParams = new URLSearchParams();
+      if (params.searchTerm) queryParams.append('searchTerm', params.searchTerm);
+      if (params.page) queryParams.append('page', params.page.toString());
+      if (params.pageSize) queryParams.append('pageSize', params.pageSize.toString());
+
+      const response = await fetchWithAuth(`${API_BASE}/api/authors?${queryParams}`, {
         method: 'GET',
       });
       return response.json();
@@ -213,8 +218,13 @@ export const api = {
   },
 
   genres: {
-    async getAll(): Promise<Genre[]> {
-      const response = await fetchWithAuth(`${API_BASE}/api/genres`, {
+    async getAll(params: { searchTerm?: string; page?: number; pageSize?: number } = {}): Promise<PaginatedResponse<Genre>> {
+      const queryParams = new URLSearchParams();
+      if (params.searchTerm) queryParams.append('searchTerm', params.searchTerm);
+      if (params.page) queryParams.append('page', params.page.toString());
+      if (params.pageSize) queryParams.append('pageSize', params.pageSize.toString());
+
+      const response = await fetchWithAuth(`${API_BASE}/api/genres?${queryParams}`, {
         method: 'GET',
       });
       return response.json();
@@ -251,8 +261,13 @@ export const api = {
   },
 
   tags: {
-    async getAll(): Promise<Tag[]> {
-      const response = await fetchWithAuth(`${API_BASE}/api/tags`, {
+    async getAll(params: { searchTerm?: string; page?: number; pageSize?: number } = {}): Promise<PaginatedResponse<Tag>> {
+      const queryParams = new URLSearchParams();
+      if (params.searchTerm) queryParams.append('searchTerm', params.searchTerm);
+      if (params.page) queryParams.append('page', params.page.toString());
+      if (params.pageSize) queryParams.append('pageSize', params.pageSize.toString());
+
+      const response = await fetchWithAuth(`${API_BASE}/api/tags?${queryParams}`, {
         method: 'GET',
       });
       return response.json();

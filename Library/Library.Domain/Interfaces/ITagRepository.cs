@@ -10,6 +10,7 @@ namespace Library.Domain.Interfaces
     public interface ITagRepository
     {
         Task<List<Tag>> GetAllAsync();
+        Task<(List<Tag> Items, int TotalCount)> GetPagedAsync(string? searchTerm, int page, int pageSize);
         Task<Tag?> GetByIdAsync(int id);
         Task<Tag> AddAsync(Tag tag);
         Task<bool> ExistsByNameAsync(string name);

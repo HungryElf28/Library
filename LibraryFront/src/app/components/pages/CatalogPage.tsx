@@ -62,8 +62,8 @@ export function CatalogPage({ onBookClick }: CatalogPageProps) {
 
   const loadGenres = async () => {
     try {
-      const data = await api.genres.getAll();
-      setGenres(data);
+      const response = await api.genres.getAll({ pageSize: 1000 });
+      setGenres(response.items);
     } catch (error) {
       console.error('Error loading genres:', error);
     }

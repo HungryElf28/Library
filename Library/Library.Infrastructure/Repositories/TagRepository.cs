@@ -25,6 +25,26 @@ public class TagRepository : ITagRepository
         return efTags.Select(TagMapper.ToDomain).ToList();
     }
 
+    public async Task<(List<Tag> Items, int TotalCount)> GetPagedAsync(string? searchTerm, int page, int pageSize)
+    {
+        var query = _context.Tags.AsQueryable();
+
+        if (!string.IsNullOrWhiteSpace(searchTerm))
+        {
+            var term = searchTerm.ToLower();
+            query = query.Where(t => t.Name.ToLower().Contains(term));
+        }
+
+        var total = await query.CountAsync();
+        var items = await query
+            .OrderBy(t => t.Name)
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
+            .ToListAsync();
+
+        return (items.Select(TagMapper.ToDomain).ToList(), total);
+    }
+
     public async Task<Tag?> GetByIdAsync(int id)
     {
         var efTags = await _context.Tags

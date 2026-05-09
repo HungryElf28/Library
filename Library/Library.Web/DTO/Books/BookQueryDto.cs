@@ -3,6 +3,7 @@ namespace Library.Web.DTO.Books
 {
     public class BookQueryDto
     {
+        public string? SearchTerm { get; set; }
         public int? GenreId { get; set; }
         public int? AuthorId { get; set; }
 

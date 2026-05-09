@@ -171,6 +171,7 @@ public class BookRepository : IBookRepository
     }
 
     public async Task<(List<Book> Items, int TotalCount)> GetPagedAsync(
+    string? searchTerm,
     int? genreId,
     int? authorId,
     int page,
@@ -183,6 +184,15 @@ public class BookRepository : IBookRepository
         .Include(b => b.Genres)
         .Include(b => b.Tags)
         .AsQueryable();
+
+    if (!string.IsNullOrWhiteSpace(searchTerm))
+    {
+        var term = searchTerm.ToLower();
+        query = query.Where(b => 
+            b.Title.ToLower().Contains(term) || 
+            b.Authors.Any(a => a.Name.ToLower().Contains(term))
+        );
+    }
 
     if (genreId.HasValue)
     {

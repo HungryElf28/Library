@@ -51,23 +51,16 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 
 builder.Services.AddAuthorization();
 
-builder.Services.AddCors(options =>
-{
-    options.AddPolicy("AllowFrontend", policy =>
-    {
-        policy
-            .WithOrigins("http://localhost:3000", "http://127.0.0.1:3000", "http://localhost:5173", "http://127.0.0.1:5173")
-            .AllowAnyHeader()
-            .AllowAnyMethod()
-            .AllowCredentials();
-    });
-});
-
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
 var app = builder.Build();
+
+app.UseCors(policy => 
+    policy.AllowAnyOrigin()
+          .AllowAnyMethod()
+          .AllowAnyHeader());
 
 if (app.Environment.IsDevelopment())
 {
@@ -78,7 +71,7 @@ if (app.Environment.IsDevelopment())
 var uploadsPath = Path.Combine(builder.Environment.ContentRootPath, "wwwroot", "uploads");
 Directory.CreateDirectory(uploadsPath);
 
-app.UseHttpsRedirection();
+// app.UseHttpsRedirection();
 
 var contentTypeProvider = new FileExtensionContentTypeProvider();
 contentTypeProvider.Mappings[".epub"] = "application/epub+zip";
@@ -106,7 +99,6 @@ app.UseStaticFiles(new StaticFileOptions
     }
 });
 
-app.UseCors("AllowFrontend");
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();

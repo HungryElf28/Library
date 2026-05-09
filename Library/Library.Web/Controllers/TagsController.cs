@@ -19,9 +19,10 @@ namespace Library.Web.Controllers
         }
 
         [HttpGet]
-        public async Task<IActionResult> GetAll()
+        public async Task<IActionResult> GetAll([FromQuery] string? searchTerm, [FromQuery] int page = 1, [FromQuery] int pageSize = 10)
         {
-            return Ok(await _service.GetAllAsync());
+            var (items, total) = await _service.GetPaged(searchTerm, page, pageSize);
+            return Ok(new { Items = items, Total = total, Page = page, PageSize = pageSize });
         }
 
         [HttpGet("{id}")]

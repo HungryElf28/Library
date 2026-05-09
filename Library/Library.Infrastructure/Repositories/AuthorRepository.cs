@@ -25,6 +25,26 @@ public class AuthorRepository : IAuthorRepository
         return efAuthors.Select(AuthorMapper.ToDomain).ToList();
     }
 
+    public async Task<(List<Author> Items, int TotalCount)> GetPagedAsync(string? searchTerm, int page, int pageSize)
+    {
+        var query = _context.Authors.AsQueryable();
+
+        if (!string.IsNullOrWhiteSpace(searchTerm))
+        {
+            var term = searchTerm.ToLower();
+            query = query.Where(a => a.Name.ToLower().Contains(term));
+        }
+
+        var total = await query.CountAsync();
+        var items = await query
+            .OrderBy(a => a.Name)
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
+            .ToListAsync();
+
+        return (items.Select(AuthorMapper.ToDomain).ToList(), total);
+    }
+
     public async Task<Author?> GetByIdAsync(int id)
     {
         var efAuthors = await _context.Authors

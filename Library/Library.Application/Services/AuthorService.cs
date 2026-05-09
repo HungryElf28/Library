@@ -22,6 +22,11 @@ namespace Library.Application.Services
             return await _repo.GetAllAsync();
         }
 
+        public async Task<(List<Author> Items, int TotalCount)> GetPaged(string? searchTerm, int page, int pageSize)
+        {
+            return await _repo.GetPagedAsync(searchTerm, page, pageSize);
+        }
+
         public async Task<Author?> GetByIdAsync(int id)
         {
             return await _repo.GetByIdAsync(id);

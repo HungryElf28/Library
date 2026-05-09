@@ -25,6 +25,26 @@ public class GenreRepository : IGenreRepository
         return efGenres.Select(GenreMapper.ToDomain).ToList();
     }
 
+    public async Task<(List<Genre> Items, int TotalCount)> GetPagedAsync(string? searchTerm, int page, int pageSize)
+    {
+        var query = _context.Genres.AsQueryable();
+
+        if (!string.IsNullOrWhiteSpace(searchTerm))
+        {
+            var term = searchTerm.ToLower();
+            query = query.Where(g => g.Name.ToLower().Contains(term));
+        }
+
+        var total = await query.CountAsync();
+        var items = await query
+            .OrderBy(g => g.Name)
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
+            .ToListAsync();
+
+        return (items.Select(GenreMapper.ToDomain).ToList(), total);
+    }
+
     public async Task<Genre?> GetByIdAsync(int id)
     {
         var efGenres = await _context.Genres
