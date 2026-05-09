@@ -8,11 +8,12 @@ namespace Library.Web.DTO.Books
     {
         public int Id { get; set; }
         public string Title { get; set; }
-        public string TextFile { get; set; }
+        public string TextFile { get; set; } = null!;
         public string? CoverFile { get; set; }
         public string? Description { get; set; }
+        public double AverageRate { get; set; }
 
-        public List<AuthorDto> Authors { get; set; }
+        public List<AuthorDto> Authors { get; set; } = new();
         public List<GenreDto> Genres { get; set; }
         public List<TagDto> Tags { get; set; }
     }

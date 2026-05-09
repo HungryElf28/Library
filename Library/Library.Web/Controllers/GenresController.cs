@@ -42,9 +42,9 @@ namespace Library.Web.Controllers
         {
             var genre = new Genre(0, dto.Name);
 
-            await _service.AddAsync(genre);
+            var created = await _service.AddAsync(genre);
 
-            return Ok();
+            return Ok(created);
         }
 
         [HttpPut("{id}")]

@@ -12,7 +12,8 @@ interface AuthorEditModalProps {
 export function AuthorEditModal({ author, onClose, onSave }: AuthorEditModalProps) {
   const [name, setName] = useState(author?.name || '');
   const [bio, setBio] = useState(author?.bio || '');
-  const [photo, setPhoto] = useState(author?.photo || '');
+  const [photoFile, setPhotoFile] = useState<File | null>(null);
+  const [currentPhoto, setCurrentPhoto] = useState(author?.photo || '');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
@@ -22,16 +23,15 @@ export function AuthorEditModal({ author, onClose, onSave }: AuthorEditModalProp
     setLoading(true);
 
     try {
-      const data = {
-        name,
-        bio: bio || undefined,
-        photo: photo || undefined,
-      };
+      const formData = new FormData();
+      formData.append('Name', name);
+      if (bio) formData.append('Bio', bio);
+      if (photoFile) formData.append('PhotoFile', photoFile);
 
       if (author) {
-        await api.authors.update(author.id, data);
+        await api.authors.update(author.id, formData);
       } else {
-        await api.authors.create(data);
+        await api.authors.create(formData);
       }
 
       onSave();
@@ -51,7 +51,7 @@ export function AuthorEditModal({ author, onClose, onSave }: AuthorEditModalProp
           </h2>
           <button
             onClick={onClose}
-            className="p-1 hover:bg-gray-100 dark:hover:bg-stone-700 rounded transition-colors"
+            className="p-1 hover:bg-gray-100 dark:hover:bg-stone-700 rounded transition-colors text-gray-500"
           >
             <X className="w-5 h-5" />
           </button>
@@ -94,15 +94,26 @@ export function AuthorEditModal({ author, onClose, onSave }: AuthorEditModalProp
 
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-stone-300 mb-2">
-                URL фотографии
+                Фотография автора
               </label>
               <input
-                type="url"
-                value={photo}
-                onChange={(e) => setPhoto(e.target.value)}
+                type="file"
+                accept="image/*"
+                onChange={(e) => setPhotoFile(e.target.files?.[0] || null)}
                 className="w-full px-3 py-2 border border-amber-300 dark:border-stone-600 bg-card text-gray-900 dark:text-stone-100 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500"
-                placeholder="https://example.com/photo.jpg"
               />
+              {currentPhoto && !photoFile && (
+                <div className="mt-2">
+                  <p className="text-xs text-gray-500 dark:text-stone-400 mb-1">Текущее фото:</p>
+                  <img src={currentPhoto} alt={name} className="w-24 h-24 object-cover rounded shadow" />
+                </div>
+              )}
+              {photoFile && (
+                <div className="mt-2">
+                  <p className="text-xs text-amber-600 dark:text-amber-400 mb-1">Новое фото:</p>
+                  <img src={URL.createObjectURL(photoFile)} alt="Preview" className="w-24 h-24 object-cover rounded shadow" />
+                </div>
+              )}
             </div>
           </div>
 

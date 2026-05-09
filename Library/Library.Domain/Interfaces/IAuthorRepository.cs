@@ -11,7 +11,7 @@ namespace Library.Domain.Interfaces
     {
         Task<List<Author>> GetAllAsync();
         Task<Author?> GetByIdAsync(int id);
-        Task AddAsync(Author author);
+        Task<Author> AddAsync(Author author);
         Task<bool> ExistsByNameAsync(string name);
         Task UpdateAsync(Author newAuthor);
         Task DeleteAsync(int id);

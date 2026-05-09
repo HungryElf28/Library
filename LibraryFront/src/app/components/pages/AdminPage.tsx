@@ -1,23 +1,27 @@
 import React, { useState, useEffect } from 'react';
-import { Book, Author, Genre } from '../../../types';
+import { Book, Author, Genre, Tag } from '../../../types';
 import { api } from '../../../services/api';
 import { Plus, Edit, Trash2, Loader, Save, X } from 'lucide-react';
 import { BookEditModal } from '../BookEditModal';
 import { AuthorEditModal } from '../AuthorEditModal';
 import { GenreEditModal } from '../GenreEditModal';
+import { TagEditModal } from '../TagEditModal';
 
 export function AdminPage() {
-  const [activeTab, setActiveTab] = useState<'books' | 'authors' | 'genres'>('books');
+  const [activeTab, setActiveTab] = useState<'books' | 'authors' | 'genres' | 'tags'>('books');
   const [books, setBooks] = useState<Book[]>([]);
   const [authors, setAuthors] = useState<Author[]>([]);
   const [genres, setGenres] = useState<Genre[]>([]);
+  const [tags, setTags] = useState<Tag[]>([]);
   const [loading, setLoading] = useState(true);
   const [editingBook, setEditingBook] = useState<Book | null>(null);
   const [editingAuthor, setEditingAuthor] = useState<Author | null>(null);
   const [editingGenre, setEditingGenre] = useState<Genre | null>(null);
+  const [editingTag, setEditingTag] = useState<Tag | null>(null);
   const [showAddBookModal, setShowAddBookModal] = useState(false);
   const [showAddAuthorModal, setShowAddAuthorModal] = useState(false);
   const [showAddGenreModal, setShowAddGenreModal] = useState(false);
+  const [showAddTagModal, setShowAddTagModal] = useState(false);
 
   useEffect(() => {
     loadData();
@@ -26,10 +30,11 @@ export function AdminPage() {
   const loadData = async () => {
     setLoading(true);
     try {
-      const [booksData, authorsData, genresData] = await Promise.all([
-        api.books.getAll({ pageSize: 50 }),
+      const [booksData, authorsData, genresData, tagsData] = await Promise.all([
+        api.books.getAll({ pageSize: 100 }),
         api.authors.getAll(),
         api.genres.getAll(),
+        api.tags.getAll(),
       ]);
 
       const fullBooks = await Promise.all(
@@ -39,6 +44,7 @@ export function AdminPage() {
       setBooks(fullBooks);
       setAuthors(authorsData);
       setGenres(genresData);
+      setTags(tagsData);
     } catch (error) {
       console.error('Error loading data:', error);
     } finally {
@@ -82,6 +88,18 @@ export function AdminPage() {
     }
   };
 
+  const handleDeleteTag = async (tagId: number) => {
+    if (!confirm('Вы уверены, что хотите удалить этот тег?')) return;
+
+    try {
+      await api.tags.delete(tagId);
+      setTags(tags.filter(t => t.id !== tagId));
+    } catch (error) {
+      console.error('Error deleting tag:', error);
+      alert(error instanceof Error ? error.message : 'Ошибка при удалении тега');
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center py-20">
@@ -99,10 +117,10 @@ export function AdminPage() {
 
       <div className="bg-card rounded-lg shadow-sm border border-amber-200 dark:border-stone-700">
         <div className="border-b border-amber-200 dark:border-stone-700">
-          <div className="flex">
+          <div className="flex overflow-x-auto">
             <button
               onClick={() => setActiveTab('books')}
-              className={`px-6 py-4 font-medium transition-colors ${
+              className={`px-6 py-4 font-medium transition-colors whitespace-nowrap ${
                 activeTab === 'books'
                   ? 'text-amber-600 dark:text-amber-500 border-b-2 border-amber-600 dark:border-amber-500'
                   : 'text-gray-600 dark:text-stone-400 hover:text-gray-900 dark:hover:text-stone-200'
@@ -112,7 +130,7 @@ export function AdminPage() {
             </button>
             <button
               onClick={() => setActiveTab('authors')}
-              className={`px-6 py-4 font-medium transition-colors ${
+              className={`px-6 py-4 font-medium transition-colors whitespace-nowrap ${
                 activeTab === 'authors'
                   ? 'text-amber-600 dark:text-amber-500 border-b-2 border-amber-600 dark:border-amber-500'
                   : 'text-gray-600 dark:text-stone-400 hover:text-gray-900 dark:hover:text-stone-200'
@@ -122,13 +140,23 @@ export function AdminPage() {
             </button>
             <button
               onClick={() => setActiveTab('genres')}
-              className={`px-6 py-4 font-medium transition-colors ${
+              className={`px-6 py-4 font-medium transition-colors whitespace-nowrap ${
                 activeTab === 'genres'
                   ? 'text-amber-600 dark:text-amber-500 border-b-2 border-amber-600 dark:border-amber-500'
                   : 'text-gray-600 dark:text-stone-400 hover:text-gray-900 dark:hover:text-stone-200'
               }`}
             >
               Жанры ({genres.length})
+            </button>
+            <button
+              onClick={() => setActiveTab('tags')}
+              className={`px-6 py-4 font-medium transition-colors whitespace-nowrap ${
+                activeTab === 'tags'
+                  ? 'text-amber-600 dark:text-amber-500 border-b-2 border-amber-600 dark:border-amber-500'
+                  : 'text-gray-600 dark:text-stone-400 hover:text-gray-900 dark:hover:text-stone-200'
+              }`}
+            >
+              Теги ({tags.length})
             </button>
           </div>
         </div>
@@ -309,6 +337,46 @@ export function AdminPage() {
               </div>
             </div>
           )}
+
+          {activeTab === 'tags' && (
+            <div>
+              <div className="flex items-center justify-between mb-6">
+                <h2 className="text-lg font-semibold text-gray-900 dark:text-stone-100">Управление тегами</h2>
+                <button
+                  onClick={() => setShowAddTagModal(true)}
+                  className="flex items-center gap-2 px-4 py-2 bg-amber-600 text-white rounded-lg hover:bg-amber-700"
+                >
+                  <Plus className="w-5 h-5" />
+                  Добавить тег
+                </button>
+              </div>
+
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+                {tags.map((tag) => (
+                  <div
+                    key={tag.id}
+                    className="p-4 bg-card border border-amber-200 dark:border-stone-700 rounded-lg hover:shadow-md transition-shadow flex items-center justify-between"
+                  >
+                    <span className="font-medium text-gray-900 dark:text-stone-100">{tag.name}</span>
+                    <div className="flex items-center gap-1">
+                      <button
+                        onClick={() => setEditingTag(tag)}
+                        className="p-1 text-amber-600 dark:text-amber-500 hover:bg-amber-50 dark:hover:bg-amber-900/30 rounded"
+                      >
+                        <Edit className="w-4 h-4" />
+                      </button>
+                      <button
+                        onClick={() => handleDeleteTag(tag.id)}
+                        className="p-1 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30 rounded"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       </div>
 
@@ -371,6 +439,27 @@ export function AdminPage() {
           onSave={() => {
             loadData();
             setShowAddGenreModal(false);
+          }}
+        />
+      )}
+
+      {editingTag && (
+        <TagEditModal
+          tag={editingTag}
+          onClose={() => setEditingTag(null)}
+          onSave={() => {
+            loadData();
+            setEditingTag(null);
+          }}
+        />
+      )}
+
+      {showAddTagModal && (
+        <TagEditModal
+          onClose={() => setShowAddTagModal(false)}
+          onSave={() => {
+            loadData();
+            setShowAddTagModal(false);
           }}
         />
       )}

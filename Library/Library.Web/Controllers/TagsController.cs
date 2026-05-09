@@ -40,9 +40,9 @@ namespace Library.Web.Controllers
         {
             var tag = new Tag(0, dto.Name);
 
-            await _service.AddAsync(tag);
+            var created = await _service.AddAsync(tag);
 
-            return Ok();
+            return Ok(created);
         }
 
         [HttpPut("{id}")]

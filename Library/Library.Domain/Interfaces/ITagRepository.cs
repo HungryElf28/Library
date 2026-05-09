@@ -11,7 +11,7 @@ namespace Library.Domain.Interfaces
     {
         Task<List<Tag>> GetAllAsync();
         Task<Tag?> GetByIdAsync(int id);
-        Task AddAsync(Tag tag);
+        Task<Tag> AddAsync(Tag tag);
         Task<bool> ExistsByNameAsync(string name);
         Task UpdateAsync(Tag newTag);
         Task DeleteAsync(int id);

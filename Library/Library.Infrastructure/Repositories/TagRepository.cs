@@ -34,12 +34,14 @@ public class TagRepository : ITagRepository
         return efTags == null ? null : TagMapper.ToDomain(efTags);
     }
 
-    public async Task AddAsync(Tag tag)
+    public async Task<Tag> AddAsync(Tag tag)
     {
         var efTag = TagMapper.ToEf(tag);
 
         _context.Tags.Add(efTag);
         await _context.SaveChangesAsync();
+
+        return TagMapper.ToDomain(efTag);
     }
 
     public async Task<bool> ExistsByNameAsync(string name)

@@ -27,13 +27,13 @@ namespace Library.Application.Services
             return await _repo.GetByIdAsync(id);
         }
 
-        public async Task AddAsync(Genre genre)
+        public async Task<Genre> AddAsync(Genre genre)
         {
             var exists = await _repo.ExistsByNameAsync(genre.Name);
 
             if (exists)
                 throw new Exception("Genre already exists");
-            await _repo.AddAsync(genre);
+            return await _repo.AddAsync(genre);
         }
 
         public async Task UpdateAsync(Genre genre)

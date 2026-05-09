@@ -17,7 +17,7 @@ public class AuthService
         _repo = repo;
     }
 
-    public async Task RegisterAsync(string login, string email, string password)
+    public async Task<(string token, User user)> RegisterAsync(string login, string email, string password)
     {
         if (await _repo.ExistsByLoginAsync(login))
             throw new Exception("User already exists");
@@ -29,9 +29,14 @@ public class AuthService
         var roleId = await _repo.GetRoleIdByNameAsync("User");
 
         await _repo.AddAsync(user, hash, roleId);
+        
+        var createdUser = await _repo.GetByLoginAsync(login);
+        if (createdUser == null) throw new Exception("Error creating user");
+
+        return (GenerateToken(createdUser), createdUser);
     }
 
-    public async Task<string?> LoginAsync(string login, string password)
+    public async Task<(string token, User user)?> LoginAsync(string login, string password)
     {
         var data = await _repo.GetWithPasswordAsync(login);
 
@@ -47,7 +52,7 @@ public class AuthService
         if (result == PasswordVerificationResult.Failed)
             return null;
 
-        return GenerateToken(user);
+        return (GenerateToken(user), user);
     }
 
     private string GenerateToken(User user)
@@ -56,11 +61,11 @@ public class AuthService
         {
             new Claim(ClaimTypes.Name, user.Login),
             new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
-            new Claim(ClaimTypes.Role, "Admin")
+            new Claim(ClaimTypes.Role, user.RoleName)
         };
 
         var key = new SymmetricSecurityKey(
-            Encoding.UTF8.GetBytes("SUPER_SECRET_KEY"));
+            Encoding.UTF8.GetBytes("SUPER_SECRET_KEY_THAT_IS_AT_LEAST_32_CHARACTERS_LONG"));
 
         var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
 

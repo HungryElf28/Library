@@ -4,6 +4,8 @@ using Library.Web.DTO.Books;
 using Library.Web.DTO.Genres;
 using Library.Web.DTO.Tags;
 using Library.Domain.Entities;
+using Library.Domain.Interfaces;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Library.Web.Extensions;
@@ -35,10 +37,14 @@ namespace Library.Web.Controllers
         };
 
         private readonly BookService _service;
+        private readonly IReviewRepository _reviewRepo;
+        private readonly IUserRepository _userRepo;
 
-        public BooksController(BookService service)
+        public BooksController(BookService service, IReviewRepository reviewRepo, IUserRepository userRepo)
         {
             _service = service;
+            _reviewRepo = reviewRepo;
+            _userRepo = userRepo;
         }
 
         [HttpGet("{id}")]
@@ -49,6 +55,8 @@ namespace Library.Web.Controllers
             if (book == null)
                 return NotFound();
 
+            var avgRate = await _reviewRepo.GetAverageRatingAsync(id);
+
             var result = new BookDetailsDto
             {
                 Id = book.Id,
@@ -56,12 +64,28 @@ namespace Library.Web.Controllers
                 TextFile = book.TextFile,
                 CoverFile = book.CoverFile,
                 Description = book.Description,
+                AverageRate = avgRate,
                 Authors = book.Authors.Select(a => new AuthorDto { Id = a.Id, Name = a.Name }).ToList(),
                 Genres = book.Genres.Select(g => new GenreDto { Id = g.Id, Name = g.Name }).ToList(),
                 Tags = book.Tags.Select(t => new TagDto { Id = t.Id, Name = t.Name }).ToList()
             };
 
             return Ok(result);
+        }
+
+        [Authorize]
+        [HttpGet("recommendations")]
+        public async Task<IActionResult> GetRecommendations()
+        {
+            var userId = User.GetUserId();
+            var recommendations = await _service.GetRecommendationsAsync(userId, _userRepo);
+            
+            return Ok(recommendations.Select(b => new {
+                b.Id,
+                b.Title,
+                b.CoverFile,
+                Authors = b.Authors.Select(a => a.Name)
+            }));
         }
 
         [HttpPost]
@@ -82,9 +106,9 @@ namespace Library.Web.Controllers
 
             var book = BuildBook(0, dto.Title, textUrl, coverUrl, dto.Description, dto.AuthorIds, dto.GenreIds, dto.TagIds);
 
-            await _service.AddAsync(book);
+            var created = await _service.AddAsync(book);
 
-            return Ok(new { book.Title, book.TextFile, book.CoverFile, book.Description });
+            return Ok(created);
         }
 
         [HttpPut("{id}")]
@@ -120,7 +144,9 @@ namespace Library.Web.Controllers
 
             await _service.UpdateAsync(book);
 
-            return Ok(new { book.Id, book.Title, book.TextFile, book.CoverFile, book.Description });
+            var updated = await _service.GetByIdAsync(id);
+
+            return Ok(updated);
         }
 
         [HttpDelete("{id}")]

@@ -19,6 +19,10 @@ public partial class User
 
     public int RoleId { get; set; }
 
+    public bool IsSubscribed { get; set; }
+
+    public DateTime? SubscriptionExpiresAt { get; set; }
+
     public virtual ICollection<Bookmark> Bookmarks { get; set; } = new List<Bookmark>();
 
     public virtual ICollection<Collection> Collections { get; set; } = new List<Collection>();

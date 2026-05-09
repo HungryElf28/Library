@@ -34,12 +34,14 @@ public class AuthorRepository : IAuthorRepository
         return efAuthors == null ? null : AuthorMapper.ToDomain(efAuthors);
     }
 
-    public async Task AddAsync(Author author)
+    public async Task<Author> AddAsync(Author author)
     {
         var efAuthor = AuthorMapper.ToEf(author);
 
         _context.Authors.Add(efAuthor);
         await _context.SaveChangesAsync();
+
+        return AuthorMapper.ToDomain(efAuthor);
     }
 
     public async Task<bool> ExistsByNameAsync(string name)

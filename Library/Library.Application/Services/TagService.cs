@@ -27,13 +27,13 @@ namespace Library.Application.Services
             return await _repo.GetByIdAsync(id);
         }
 
-        public async Task AddAsync(Tag tag)
+        public async Task<Tag> AddAsync(Tag tag)
         {
             var exists = await _repo.ExistsByNameAsync(tag.Name);
 
             if (exists)
                 throw new Exception("Tag already exists");
-            await _repo.AddAsync(tag);
+            return await _repo.AddAsync(tag);
         }
 
         public async Task UpdateAsync(Tag tag)

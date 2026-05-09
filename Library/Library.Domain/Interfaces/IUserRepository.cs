@@ -12,6 +12,7 @@ namespace Library.Domain.Interfaces
         Task AddAsync(User user, string passwordHash, int roleId);
         Task<bool> ExistsByLoginAsync(string login);
         Task<User?> GetByLoginAsync(string login);
+        Task<User?> GetByIdAsync(int id);
         Task<(User user, string passwordHash)?> GetWithPasswordAsync(string login);
         Task AddToFavoritesAsync(int userId, int bookId);
         Task RemoveFromFavoritesAsync(int userId, int bookId);
@@ -21,5 +22,9 @@ namespace Library.Domain.Interfaces
         Task SaveProgressAsync(int userId, int bookId, int page);
         Task<int?> GetProgressAsync(int userId, int bookId);
         Task<List<ReadingBook>> GetReadingAsync(int userId);
+        Task UpdateSubscriptionAsync(int userId, bool isSubscribed, DateTime? expiresAt);
+        Task DeleteAsync(int userId);
+        Task ChangeRoleAsync(int userId, string roleName);
+        Task<List<User>> GetAllAsync();
     }
 }

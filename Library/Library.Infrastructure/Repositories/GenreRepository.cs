@@ -34,12 +34,14 @@ public class GenreRepository : IGenreRepository
         return efGenres == null ? null : GenreMapper.ToDomain(efGenres);
     }
 
-    public async Task AddAsync(Genre genre)
+    public async Task<Genre> AddAsync(Genre genre)
     {
         var efGenre = GenreMapper.ToEf(genre);
 
         _context.Genres.Add(efGenre);
         await _context.SaveChangesAsync();
+
+        return GenreMapper.ToDomain(efGenre);
     }
 
     public async Task<bool> ExistsByNameAsync(string name)

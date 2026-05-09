@@ -1,7 +1,6 @@
 ﻿using Library.Domain.Interfaces;
 using Library.Infrastructure.Data;
 using Library.Domain.Entities;
-using Library.Domain.Interfaces;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -14,6 +13,11 @@ namespace Library.Infrastructure.Repositories
     public class ReviewRepository : IReviewRepository
     {
         private readonly LibraryDbContext _context;
+
+        public ReviewRepository(LibraryDbContext context)
+        {
+            _context = context;
+        }
 
         public async Task AddOrUpdateAsync(Review review)
         {

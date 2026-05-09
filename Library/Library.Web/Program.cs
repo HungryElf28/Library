@@ -1,6 +1,7 @@
 using Library.Application.Services;
 using Library.Domain.Interfaces;
 using Library.Infrastructure.Data;
+using Library.Infrastructure.Data.Models;
 using Library.Infrastructure.Repositories;
 using Microsoft.Extensions.FileProviders;
 using Microsoft.EntityFrameworkCore;
@@ -21,6 +22,8 @@ builder.Services.AddScoped<IGenreRepository, GenreRepository>();
 builder.Services.AddScoped<IAuthorRepository, AuthorRepository>();
 builder.Services.AddScoped<ITagRepository, TagRepository>();
 builder.Services.AddScoped<IUserRepository, UserRepository>();
+builder.Services.AddScoped<IReviewRepository, ReviewRepository>();
+builder.Services.AddScoped<ICollectionRepository, CollectionRepository>();
 
 builder.Services.AddScoped<BookService>();
 builder.Services.AddScoped<GenreService>();
@@ -28,6 +31,9 @@ builder.Services.AddScoped<AuthorService>();
 builder.Services.AddScoped<TagService>();
 builder.Services.AddScoped<AuthService>();
 builder.Services.AddScoped<SearchService>();
+builder.Services.AddScoped<ReviewService>();
+builder.Services.AddScoped<CollectionService>();
+builder.Services.AddScoped<UserService>();
 
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
@@ -39,7 +45,7 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             ValidateLifetime = true,
             ValidateIssuerSigningKey = true,
             IssuerSigningKey = new SymmetricSecurityKey(
-                Encoding.UTF8.GetBytes("SUPER_SECRET_KEY"))
+                Encoding.UTF8.GetBytes("SUPER_SECRET_KEY_THAT_IS_AT_LEAST_32_CHARACTERS_LONG"))
         };
     });
 
@@ -103,7 +109,6 @@ app.UseStaticFiles(new StaticFileOptions
 app.UseCors("AllowFrontend");
 app.UseAuthentication();
 app.UseAuthorization();
-
 app.MapControllers();
 
 using (var scope = app.Services.CreateScope())
@@ -120,6 +125,41 @@ using (var scope = app.Services.CreateScope())
             logger.LogInformation("Attempt {Attempt} of {MaxRetries}: Applying database migrations...", i + 1, maxRetries);
             dbContext.Database.Migrate();
             logger.LogInformation("Database migrations applied successfully.");
+
+            if (!dbContext.Roles.Any())
+            {
+                dbContext.Roles.AddRange(
+                    new Role { Id = 1, Role1 = "Admin" },
+                    new Role { Id = 2, Role1 = "User" }
+                );
+                dbContext.SaveChanges();
+                logger.LogInformation("Roles seeded.");
+            }
+
+            var adminConfig = builder.Configuration.GetSection("DefaultAdmin");
+            var adminLogin = adminConfig["Login"] ?? "admin";
+            var adminPassword = adminConfig["Password"] ?? "password";
+            var adminEmail = adminConfig["Email"] ?? "admin@example.com";
+
+            if (!dbContext.Users.Any(u => u.Login == adminLogin))
+            {
+                var adminRole = dbContext.Roles.First(r => r.Role1 == "Admin");
+                var adminUser = new User
+                {
+                    Login = adminLogin,
+                    Email = adminEmail,
+                    NormalizedLogin = adminLogin.ToUpperInvariant(),
+                    NormalizedEmail = adminEmail.ToUpperInvariant(),
+                    RoleId = adminRole.Id
+                };
+                var hasher = new Microsoft.AspNetCore.Identity.PasswordHasher<User>();
+                adminUser.PasswordHash = hasher.HashPassword(adminUser, adminPassword);
+                
+                dbContext.Users.Add(adminUser);
+                dbContext.SaveChanges();
+                logger.LogInformation("Admin user seeded: {Login}", adminLogin);
+            }
+
             break;
         }
         catch (Exception ex)

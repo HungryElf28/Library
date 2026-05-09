@@ -28,9 +28,9 @@ namespace Library.Application.Services
             return await _repo.GetByIdAsync(id);
         }
 
-        public async Task AddAsync(Book book)
+        public async Task<Book> AddAsync(Book book)
         {
-            await _repo.AddAsync(book);
+            return await _repo.AddAsync(book);
         }
 
         public async Task UpdateAsync(Book book)
@@ -45,6 +45,32 @@ namespace Library.Application.Services
         public async Task<(List<Book>, int)> GetPaged(int? genreId, int? authorId, int page, int pageSize, BookSortBy sortBy, BookSortOrder sortOrder)
         {
             return await _repo.GetPagedAsync(genreId, authorId, page, pageSize, sortBy, sortOrder);
+        }
+
+        public async Task<List<Book>> GetRecommendationsAsync(int userId, IUserRepository userRepo)
+        {
+            var favorites = await userRepo.GetFavoritesAsync(userId);
+            if (!favorites.Any())
+            {
+                // Return top rated or latest if no favorites
+                var (items, _) = await _repo.GetPagedAsync(null, null, 1, 10, BookSortBy.Rate, BookSortOrder.Desc);
+                return items;
+            }
+
+            var favoriteGenreIds = favorites.SelectMany(b => b.Genres).Select(g => g.Id).Distinct().ToList();
+            
+            var recommendations = new List<Book>();
+            foreach (var genreId in favoriteGenreIds)
+            {
+                var (items, _) = await _repo.GetPagedAsync(genreId, null, 1, 5, BookSortBy.Rate, BookSortOrder.Desc);
+                recommendations.AddRange(items);
+            }
+
+            return recommendations
+                .Where(r => !favorites.Any(f => f.Id == r.Id))
+                .DistinctBy(b => b.Id)
+                .Take(10)
+                .ToList();
         }
 
         public void DeleteFileIfExists(string? fileUrl)

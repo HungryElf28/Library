@@ -11,7 +11,7 @@ namespace Library.Domain.Interfaces
     {
         Task<List<Genre>> GetAllAsync();
         Task<Genre?> GetByIdAsync(int id);
-        Task AddAsync(Genre genre);
+        Task<Genre> AddAsync(Genre genre);
         Task<bool> ExistsByNameAsync(string name);
         Task UpdateAsync(Genre newGenre);
         Task DeleteAsync(int id);

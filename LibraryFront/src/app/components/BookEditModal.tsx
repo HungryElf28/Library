@@ -118,17 +118,17 @@ export function BookEditModal({ book, onClose, onSave }: BookEditModalProps) {
     <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4">
       <div className="bg-card rounded-lg shadow-xl max-w-3xl w-full max-h-[90vh] overflow-y-auto">
         <div className="sticky top-0 bg-card border-b border-amber-200 dark:border-stone-700 px-6 py-4 flex items-center justify-between">
-          <h2 className="text-xl font-semibold text-gray-900">
+          <h2 className="text-xl font-semibold text-gray-900 dark:text-stone-100">
             {book ? 'Редактировать книгу' : 'Добавить книгу'}
           </h2>
-          <button onClick={onClose} className="p-2 hover:bg-gray-100 rounded-lg">
+          <button onClick={onClose} className="p-2 hover:bg-gray-100 dark:hover:bg-stone-700 rounded-lg text-gray-500 dark:text-stone-400">
             <X className="w-5 h-5" />
           </button>
         </div>
 
         <form onSubmit={handleSubmit} className="p-6 space-y-6">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium text-gray-700 dark:text-stone-300 mb-2">
               Название *
             </label>
             <input
@@ -136,26 +136,26 @@ export function BookEditModal({ book, onClose, onSave }: BookEditModalProps) {
               value={formData.title}
               onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormData({ ...formData, title: e.target.value })}
               required
-              className="w-full px-3 py-2 border border-amber-300 dark:border-stone-600 bg-card rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500"
+              className="w-full px-3 py-2 border border-amber-300 dark:border-stone-600 bg-card text-gray-900 dark:text-stone-100 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500"
               placeholder="Введите название книги"
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium text-gray-700 dark:text-stone-300 mb-2">
               Описание
             </label>
             <textarea
               value={formData.description}
               onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setFormData({ ...formData, description: e.target.value })}
               rows={4}
-              className="w-full px-3 py-2 border border-amber-300 dark:border-stone-600 bg-card rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500"
+              className="w-full px-3 py-2 border border-amber-300 dark:border-stone-600 bg-card text-gray-900 dark:text-stone-100 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500"
               placeholder="Введите описание книги"
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium text-gray-700 dark:text-stone-300 mb-2">
               Файл текста *
             </label>
             <input
@@ -168,15 +168,15 @@ export function BookEditModal({ book, onClose, onSave }: BookEditModalProps) {
                 })
               }
               required={!book}
-              className="w-full px-3 py-2 border border-amber-300 dark:border-stone-600 bg-card rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500"
+              className="w-full px-3 py-2 border border-amber-300 dark:border-stone-600 bg-card text-gray-900 dark:text-stone-100 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500"
             />
             {typeof formData.textFile === 'string' && formData.textFile && (
-              <p className="mt-2 text-sm text-gray-600">Текущий файл: {formData.textFile}</p>
+              <p className="mt-2 text-sm text-gray-600 dark:text-stone-400">Текущий файл: {formData.textFile}</p>
             )}
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium text-gray-700 dark:text-stone-300 mb-2">
               Обложка
             </label>
             <input
@@ -188,10 +188,10 @@ export function BookEditModal({ book, onClose, onSave }: BookEditModalProps) {
                   coverFile: e.target.files?.[0]
                 })
               }
-              className="w-full px-3 py-2 border border-amber-300 dark:border-stone-600 bg-card rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500"
+              className="w-full px-3 py-2 border border-amber-300 dark:border-stone-600 bg-card text-gray-900 dark:text-stone-100 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500"
             />
             {typeof formData.coverFile === 'string' && formData.coverFile && (
-              <p className="mt-2 text-sm text-gray-600">Текущая обложка: {formData.coverFile}</p>
+              <p className="mt-2 text-sm text-gray-600 dark:text-stone-400">Текущая обложка: {formData.coverFile}</p>
             )}
             {formData.coverFile instanceof File && (
               <img
@@ -202,7 +202,7 @@ export function BookEditModal({ book, onClose, onSave }: BookEditModalProps) {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium text-gray-700 dark:text-stone-300 mb-2">
               Авторы *
             </label>
             <div className="border border-amber-300 dark:border-stone-600 rounded-lg p-3 max-h-48 overflow-y-auto space-y-2">
@@ -214,14 +214,14 @@ export function BookEditModal({ book, onClose, onSave }: BookEditModalProps) {
                     onChange={() => toggleAuthor(author.id)}
                     className="w-4 h-4 text-amber-600 border-gray-300 rounded focus:ring-amber-500"
                   />
-                  <span className="text-sm text-gray-700">{author.name}</span>
+                  <span className="text-sm text-gray-700 dark:text-stone-300">{author.name}</span>
                 </label>
               ))}
             </div>
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium text-gray-700 dark:text-stone-300 mb-2">
               Жанры
             </label>
             <div className="border border-amber-300 dark:border-stone-600 rounded-lg p-3 max-h-48 overflow-y-auto space-y-2">
@@ -233,14 +233,14 @@ export function BookEditModal({ book, onClose, onSave }: BookEditModalProps) {
                     onChange={() => toggleGenre(genre.id)}
                     className="w-4 h-4 text-amber-600 border-gray-300 rounded focus:ring-amber-500"
                   />
-                  <span className="text-sm text-gray-700">{genre.name}</span>
+                  <span className="text-sm text-gray-700 dark:text-stone-300">{genre.name}</span>
                 </label>
               ))}
             </div>
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium text-gray-700 dark:text-stone-300 mb-2">
               Теги
             </label>
             <div className="border border-amber-300 dark:border-stone-600 rounded-lg p-3 max-h-48 overflow-y-auto flex flex-wrap gap-2">

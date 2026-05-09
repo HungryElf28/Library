@@ -11,7 +11,7 @@ namespace Library.Domain.Interfaces
     {
         Task<List<Book>> GetAllAsync();
         Task<Book?> GetByIdAsync(int id);
-        Task AddAsync(Book book);
+        Task<Book> AddAsync(Book book);
         Task UpdateAsync(Book newBook);
         Task DeleteAsync(int id);
         Task<List<SearchProjection>> SearchAsync(string query);

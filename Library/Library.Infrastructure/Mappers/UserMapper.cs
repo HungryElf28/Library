@@ -7,6 +7,13 @@ public static class UserMapper
 {
     public static User ToDomain(EfUser ef)
     {
-        return new User(ef.Id, ef.Login, ef.Email);
+        return new User(
+            ef.Id, 
+            ef.Login, 
+            ef.Email, 
+            ef.Role?.Role1 ?? "User", 
+            ef.IsSubscribed, 
+            ef.SubscriptionExpiresAt
+        );
     }
 }

@@ -12,6 +12,15 @@ namespace Library.Web.Controllers
     [Route("api/authors")]
     public class AuthorsController : ControllerBase
     {
+        private static readonly HashSet<string> AllowedImageExtensions = new(StringComparer.OrdinalIgnoreCase)
+        {
+            ".jpg",
+            ".jpeg",
+            ".png",
+            ".webp",
+            ".gif"
+        };
+
         private readonly AuthorService _service;
 
         public AuthorsController(AuthorService service)
@@ -37,37 +46,115 @@ namespace Library.Web.Controllers
         }
 
         [HttpPost]
-        public async Task<IActionResult> Create(CreateAuthorDto dto)
+        public async Task<IActionResult> Create([FromForm] CreateAuthorDto dto)
         {
-            var author = new Author(0, dto.Name, dto.Bio, dto.Photo);
+            string? photoUrl = null;
+            if (dto.PhotoFile != null)
+            {
+                if (!IsAllowedExtension(dto.PhotoFile, AllowedImageExtensions))
+                    return BadRequest("Unsupported image file extension.");
 
-            await _service.AddAsync(author);
+                var uploadsPath = EnsureUploadsPath();
+                photoUrl = await SaveUploadedFile(dto.PhotoFile, uploadsPath);
+            }
 
-            return Ok();
+            var author = new Author(0, dto.Name, dto.Bio, photoUrl);
+            var created = await _service.AddAsync(author);
+
+            return Ok(created);
         }
 
         [HttpPut("{id}")]
-        public async Task<IActionResult> Update(int id, UpdateAuthorDto dto)
+        public async Task<IActionResult> Update(int id, [FromForm] UpdateAuthorDto dto)
         {
+            var existing = await _service.GetByIdAsync(id);
+            if (existing == null)
+                return NotFound();
+
+            string? photoUrl = existing.Photo;
+            if (dto.PhotoFile != null)
+            {
+                if (!IsAllowedExtension(dto.PhotoFile, AllowedImageExtensions))
+                    return BadRequest("Unsupported image file extension.");
+
+                var uploadsPath = EnsureUploadsPath();
+                photoUrl = await SaveUploadedFile(dto.PhotoFile, uploadsPath);
+                
+                // Delete old photo if it was a local file
+                DeleteFileIfExists(existing.Photo);
+            }
+
             var author = new Author(
                 id,
                 dto.Name,
                 dto.Bio,
-                dto.Photo
+                photoUrl
             );
 
             await _service.UpdateAsync(author);
 
-            return Ok();
+            var updated = await _service.GetByIdAsync(id);
+            return Ok(updated);
         }
 
         [HttpDelete("{id}")]
         public async Task<IActionResult> Delete(int id)
         {
-            //if (!User.IsAdmin())
-              //  return Forbid();
+            var existing = await _service.GetByIdAsync(id);
+            if (existing != null)
+            {
+                DeleteFileIfExists(existing.Photo);
+            }
+
             await _service.DeleteAsync(id);
             return NoContent();
+        }
+
+        private string EnsureUploadsPath()
+        {
+            var uploadsPath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "uploads");
+            Directory.CreateDirectory(uploadsPath);
+            return uploadsPath;
+        }
+
+        private static bool IsAllowedExtension(IFormFile file, HashSet<string> allowedExtensions)
+        {
+            return allowedExtensions.Contains(Path.GetExtension(file.FileName));
+        }
+
+        private async Task<string> SaveUploadedFile(IFormFile file, string uploadsPath)
+        {
+            var extension = Path.GetExtension(file.FileName);
+            var fileName = $"{Guid.NewGuid()}{extension.ToLowerInvariant()}";
+            var path = Path.Combine(uploadsPath, fileName);
+
+            await using (var stream = new FileStream(path, FileMode.Create))
+            {
+                await file.CopyToAsync(stream);
+            }
+
+            return $"{Request.Scheme}://{Request.Host}/uploads/{fileName}";
+        }
+
+        private void DeleteFileIfExists(string? fileUrl)
+        {
+            if (string.IsNullOrEmpty(fileUrl))
+                return;
+
+            try
+            {
+                var uri = new Uri(fileUrl);
+                var fileName = Path.GetFileName(uri.LocalPath);
+                var path = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "uploads", fileName);
+
+                if (System.IO.File.Exists(path))
+                {
+                    System.IO.File.Delete(path);
+                }
+            }
+            catch
+            {
+            }
         }
     }
 }

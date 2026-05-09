@@ -40,24 +40,29 @@ public class BookRepository : IBookRepository
         return efBook == null ? null : BookMapper.ToDomain(efBook);
     }
 
-    public async Task AddAsync(Book book)
+    public async Task<Book> AddAsync(Book book)
     {
         var efBook = BookMapper.ToEf(book);
 
+        var authorIds = book.Authors.Select(x => x.Id).ToList();
         efBook.Authors = await _context.Authors
-        .Where(a => book.Authors.Select(x => x.Id).Contains(a.Id))
-        .ToListAsync();
-
-        efBook.Genres = await _context.Genres
-            .Where(g => book.Genres.Select(x => x.Id).Contains(g.Id))
+            .Where(a => authorIds.Contains(a.Id))
             .ToListAsync();
 
+        var genreIds = book.Genres.Select(x => x.Id).ToList();
+        efBook.Genres = await _context.Genres
+            .Where(g => genreIds.Contains(g.Id))
+            .ToListAsync();
+
+        var tagIds = book.Tags.Select(x => x.Id).ToList();
         efBook.Tags = await _context.Tags
-            .Where(t => book.Tags.Select(x => x.Id).Contains(t.Id))
+            .Where(t => tagIds.Contains(t.Id))
             .ToListAsync();
 
         _context.Books.Add(efBook);
         await _context.SaveChangesAsync();
+
+        return (await GetByIdAsync(efBook.Id))!;
     }
 
     public async Task UpdateAsync(Book newBook)

@@ -1,4 +1,6 @@
-﻿namespace Library.Web.DTO.Authors
+﻿using Microsoft.AspNetCore.Http;
+
+namespace Library.Web.DTO.Authors
 {
     public class CreateAuthorDto
     {
@@ -6,6 +8,6 @@
 
         public string? Bio { get; set; }
 
-        public string? Photo { get; set; }
+        public IFormFile? PhotoFile { get; set; }
     }
 }

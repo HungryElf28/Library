@@ -28,7 +28,7 @@ import { mockAuthors, mockGenres, mockTags, mockBooks, mockUsers } from './mockD
 import { API_BASE } from '../config';
 
 // Use mock data mode - set to false when backend is available
-const USE_MOCK_DATA = true;
+const USE_MOCK_DATA = false; // Updated auth endpoints to /api/auth/*
 
 const STORAGE_KEY = 'library_auth_token';
 const FAVORITES_KEY = 'library_favorites';
@@ -67,15 +67,9 @@ async function fetchWithAuth(url: string, options: RequestInit = {}): Promise<Re
 export const api = {
   auth: {
     async login(data: LoginDto): Promise<AuthResponse> {
-      await delay(500);
-
-      const params = new URLSearchParams({
-        Login: data.login,
-        Password: data.password,
-      });
-
-      const response = await fetchWithAuth(`${API_BASE}/login?${params}`, {
+      const response = await fetchWithAuth(`${API_BASE}/api/auth/login`, {
         method: 'POST',
+        body: JSON.stringify(data),
       });
 
       const result = await response.json();
@@ -88,16 +82,9 @@ export const api = {
     },
 
     async register(data: RegisterDto): Promise<AuthResponse> {
-      await delay(500);
-
-      const params = new URLSearchParams({
-        Login: data.login,
-        Email: data.email,
-        Password: data.password,
-      });
-
-      const response = await fetchWithAuth(`${API_BASE}/register?${params}`, {
+      const response = await fetchWithAuth(`${API_BASE}/api/auth/register`, {
         method: 'POST',
+        body: JSON.stringify(data),
       });
 
       const result = await response.json();
@@ -110,7 +97,6 @@ export const api = {
     },
 
     async logout(): Promise<void> {
-      await delay(300);
       localStorage.removeItem(STORAGE_KEY);
       currentUser = null;
       authToken = null;
@@ -123,12 +109,19 @@ export const api = {
     getToken(): string | null {
       return authToken;
     },
+
+    async getMe(): Promise<User> {
+      const response = await fetchWithAuth(`${API_BASE}/api/auth/me`, {
+        method: 'GET',
+      });
+      const user = await response.json();
+      currentUser = user;
+      return user;
+    },
   },
 
   books: {
     async getAll(params: BookQueryParams = {}): Promise<PaginatedResponse<BookListItem>> {
-      await delay(500);
-
       const queryParams = new URLSearchParams();
       if (params.genreId) queryParams.append('GenreId', params.genreId.toString());
       if (params.authorId) queryParams.append('AuthorId', params.authorId.toString());
@@ -145,7 +138,6 @@ export const api = {
     },
 
     async getById(id: number): Promise<Book> {
-      await delay(300);
       const response = await fetchWithAuth(`${API_BASE}/api/books/${id}`, {
         method: 'GET',
       });
@@ -153,7 +145,6 @@ export const api = {
     },
 
     async create(data: FormData): Promise<Book> {
-      await delay(500);
       const response = await fetchWithAuth(`${API_BASE}/api/books`, {
         method: 'POST',
         body: data,
@@ -162,7 +153,6 @@ export const api = {
     },
 
     async update(id: number, data: FormData): Promise<Book> {
-      await delay(500);
       const response = await fetchWithAuth(`${API_BASE}/api/books/${id}`, {
         method: 'PUT',
         body: data,
@@ -171,16 +161,21 @@ export const api = {
     },
 
     async delete(id: number): Promise<void> {
-      await delay(500);
       await fetchWithAuth(`${API_BASE}/api/books/${id}`, {
         method: 'DELETE',
       });
+    },
+
+    async getRecommendations(): Promise<BookListItem[]> {
+      const response = await fetchWithAuth(`${API_BASE}/api/books/recommendations`, {
+        method: 'GET',
+      });
+      return response.json();
     },
   },
 
   authors: {
     async getAll(): Promise<Author[]> {
-      await delay(300);
       const response = await fetchWithAuth(`${API_BASE}/api/authors`, {
         method: 'GET',
       });
@@ -188,33 +183,29 @@ export const api = {
     },
 
     async getById(id: number): Promise<Author> {
-      await delay(300);
       const response = await fetchWithAuth(`${API_BASE}/api/authors/${id}`, {
         method: 'GET',
       });
       return response.json();
     },
 
-    async create(data: CreateAuthorDto): Promise<Author> {
-      await delay(500);
+    async create(data: FormData): Promise<Author> {
       const response = await fetchWithAuth(`${API_BASE}/api/authors`, {
         method: 'POST',
-        body: JSON.stringify(data),
+        body: data,
       });
       return response.json();
     },
 
-    async update(id: number, data: UpdateAuthorDto): Promise<Author> {
-      await delay(500);
+    async update(id: number, data: FormData): Promise<Author> {
       const response = await fetchWithAuth(`${API_BASE}/api/authors/${id}`, {
         method: 'PUT',
-        body: JSON.stringify(data),
+        body: data,
       });
       return response.json();
     },
 
     async delete(id: number): Promise<void> {
-      await delay(500);
       await fetchWithAuth(`${API_BASE}/api/authors/${id}`, {
         method: 'DELETE',
       });
@@ -223,7 +214,6 @@ export const api = {
 
   genres: {
     async getAll(): Promise<Genre[]> {
-      await delay(300);
       const response = await fetchWithAuth(`${API_BASE}/api/genres`, {
         method: 'GET',
       });
@@ -231,7 +221,6 @@ export const api = {
     },
 
     async getById(id: number): Promise<Genre> {
-      await delay(300);
       const response = await fetchWithAuth(`${API_BASE}/api/genres/${id}`, {
         method: 'GET',
       });
@@ -239,7 +228,6 @@ export const api = {
     },
 
     async create(data: CreateGenreDto): Promise<Genre> {
-      await delay(500);
       const response = await fetchWithAuth(`${API_BASE}/api/genres`, {
         method: 'POST',
         body: JSON.stringify(data),
@@ -248,7 +236,6 @@ export const api = {
     },
 
     async update(id: number, data: UpdateGenreDto): Promise<Genre> {
-      await delay(500);
       const response = await fetchWithAuth(`${API_BASE}/api/genres/${id}`, {
         method: 'PUT',
         body: JSON.stringify(data),
@@ -257,7 +244,6 @@ export const api = {
     },
 
     async delete(id: number): Promise<void> {
-      await delay(500);
       await fetchWithAuth(`${API_BASE}/api/genres/${id}`, {
         method: 'DELETE',
       });
@@ -266,7 +252,6 @@ export const api = {
 
   tags: {
     async getAll(): Promise<Tag[]> {
-      await delay(300);
       const response = await fetchWithAuth(`${API_BASE}/api/tags`, {
         method: 'GET',
       });
@@ -274,7 +259,6 @@ export const api = {
     },
 
     async getById(id: number): Promise<Tag> {
-      await delay(300);
       const response = await fetchWithAuth(`${API_BASE}/api/tags/${id}`, {
         method: 'GET',
       });
@@ -282,7 +266,6 @@ export const api = {
     },
 
     async create(data: { name: string }): Promise<Tag> {
-      await delay(500);
       const response = await fetchWithAuth(`${API_BASE}/api/tags`, {
         method: 'POST',
         body: JSON.stringify(data),
@@ -291,7 +274,6 @@ export const api = {
     },
 
     async update(id: number, data: { name: string }): Promise<Tag> {
-      await delay(500);
       const response = await fetchWithAuth(`${API_BASE}/api/tags/${id}`, {
         method: 'PUT',
         body: JSON.stringify(data),
@@ -300,7 +282,6 @@ export const api = {
     },
 
     async delete(id: number): Promise<void> {
-      await delay(500);
       await fetchWithAuth(`${API_BASE}/api/tags/${id}`, {
         method: 'DELETE',
       });
@@ -309,7 +290,6 @@ export const api = {
 
   reviews: {
     async getByBookId(bookId: number): Promise<Review[]> {
-      await delay(300);
       const response = await fetchWithAuth(`${API_BASE}/api/Reviews/${bookId}`, {
         method: 'GET',
       });
@@ -317,7 +297,6 @@ export const api = {
     },
 
     async create(bookId: number, data: CreateReviewDto): Promise<Review> {
-      await delay(500);
       const response = await fetchWithAuth(`${API_BASE}/api/Reviews/${bookId}`, {
         method: 'POST',
         body: JSON.stringify(data),
@@ -328,7 +307,6 @@ export const api = {
 
   users: {
     async getFavorites(): Promise<BookListItem[]> {
-      await delay(300);
       const response = await fetchWithAuth(`${API_BASE}/api/Users/favorites`, {
         method: 'GET',
       });
@@ -336,30 +314,60 @@ export const api = {
     },
 
     async addToFavorites(bookId: number): Promise<void> {
-      await delay(300);
       await fetchWithAuth(`${API_BASE}/api/Users/favorites/${bookId}`, {
         method: 'POST',
       });
     },
 
     async removeFromFavorites(bookId: number): Promise<void> {
-      await delay(300);
       await fetchWithAuth(`${API_BASE}/api/Users/favorites/${bookId}`, {
         method: 'DELETE',
       });
     },
 
     async getReading(): Promise<ReadingBook[]> {
-      await delay(300);
       const response = await fetchWithAuth(`${API_BASE}/api/Users/reading`, {
         method: 'GET',
       });
       return response.json();
     },
 
+    async saveProgress(bookId: number, page: number): Promise<void> {
+      await fetchWithAuth(`${API_BASE}/api/Users/reading/${bookId}`, {
+        method: 'POST',
+        body: JSON.stringify(page),
+      });
+    },
+
+    async updateSubscription(isSubscribed: boolean): Promise<void> {
+      await fetchWithAuth(`${API_BASE}/api/Users/subscription`, {
+        method: 'POST',
+        body: JSON.stringify(isSubscribed),
+      });
+    },
+
+    async getAllUsers(): Promise<User[]> {
+      const response = await fetchWithAuth(`${API_BASE}/api/Users/all`, {
+        method: 'GET',
+      });
+      return response.json();
+    },
+
+    async deleteUser(userId: number): Promise<void> {
+      await fetchWithAuth(`${API_BASE}/api/Users/${userId}`, {
+        method: 'DELETE',
+      });
+    },
+
+    async changeRole(userId: number, roleName: string): Promise<void> {
+      await fetchWithAuth(`${API_BASE}/api/Users/${userId}/role`, {
+        method: 'POST',
+        body: JSON.stringify(roleName),
+      });
+    },
+
     async updateReadingProgress(bookId: number, page: number, totalPages: number): Promise<void> {
-      // This endpoint doesn't exist in the API, using localStorage as fallback
-      await delay(300);
+      await api.users.saveProgress(bookId, page);
 
       const progress = JSON.parse(localStorage.getItem(READING_PROGRESS_KEY) || '{}');
       progress[bookId] = {
@@ -373,7 +381,6 @@ export const api = {
 
   collections: {
     async getAll(): Promise<Collection[]> {
-      await delay(300);
       const response = await fetchWithAuth(`${API_BASE}/api/Collections`, {
         method: 'GET',
       });
@@ -381,7 +388,6 @@ export const api = {
     },
 
     async getById(id: number): Promise<Collection> {
-      await delay(300);
       const response = await fetchWithAuth(`${API_BASE}/api/Collections/${id}`, {
         method: 'GET',
       });
@@ -389,7 +395,6 @@ export const api = {
     },
 
     async create(data: CreateCollectionDto): Promise<Collection> {
-      await delay(500);
       const response = await fetchWithAuth(`${API_BASE}/api/Collections`, {
         method: 'POST',
         body: JSON.stringify(data),
@@ -398,7 +403,6 @@ export const api = {
     },
 
     async update(id: number, data: UpdateCollectionDto): Promise<Collection> {
-      await delay(500);
       const response = await fetchWithAuth(`${API_BASE}/api/Collections/${id}`, {
         method: 'PUT',
         body: JSON.stringify(data),
@@ -407,21 +411,18 @@ export const api = {
     },
 
     async delete(id: number): Promise<void> {
-      await delay(500);
       await fetchWithAuth(`${API_BASE}/api/Collections/${id}`, {
         method: 'DELETE',
       });
     },
 
     async addBook(collectionId: number, bookId: number): Promise<void> {
-      await delay(300);
       await fetchWithAuth(`${API_BASE}/api/Collections/${collectionId}/books/${bookId}`, {
         method: 'POST',
       });
     },
 
     async removeBook(collectionId: number, bookId: number): Promise<void> {
-      await delay(300);
       await fetchWithAuth(`${API_BASE}/api/Collections/${collectionId}/books/${bookId}`, {
         method: 'DELETE',
       });
@@ -430,14 +431,12 @@ export const api = {
 
   bookmarks: {
     async getByBookId(bookId: number): Promise<Bookmark[]> {
-      await delay(300);
       // This endpoint doesn't exist in the API, using localStorage as fallback
       const bookmarks = JSON.parse(localStorage.getItem(BOOKMARKS_KEY) || '{}');
       return bookmarks[bookId] || [];
     },
 
     async create(bookId: number, page: number, note?: string): Promise<Bookmark> {
-      await delay(300);
       // This endpoint doesn't exist in the API, using localStorage as fallback
       const bookmarks = JSON.parse(localStorage.getItem(BOOKMARKS_KEY) || '{}');
       if (!bookmarks[bookId]) {
@@ -458,7 +457,6 @@ export const api = {
     },
 
     async delete(bookId: number, bookmarkId: number): Promise<void> {
-      await delay(300);
       // This endpoint doesn't exist in the API, using localStorage as fallback
       const bookmarks = JSON.parse(localStorage.getItem(BOOKMARKS_KEY) || '{}');
       if (bookmarks[bookId]) {
@@ -470,8 +468,6 @@ export const api = {
 
   search: {
     async search(query: string): Promise<{ books: BookListItem[]; authors: Author[]; genres: Genre[] }> {
-      await delay(400);
-
       const queryParams = new URLSearchParams({ query });
       const response = await fetchWithAuth(`${API_BASE}/api/search?${queryParams}`, {
         method: 'GET',

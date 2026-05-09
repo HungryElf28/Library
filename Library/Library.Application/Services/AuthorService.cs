@@ -27,14 +27,14 @@ namespace Library.Application.Services
             return await _repo.GetByIdAsync(id);
         }
 
-        public async Task AddAsync(Author author)
+        public async Task<Author> AddAsync(Author author)
         {
             var exists = await _repo.ExistsByNameAsync(author.Name);
 
             if (exists)
                 throw new Exception("Author already exists");
 
-            await _repo.AddAsync(author);
+            return await _repo.AddAsync(author);
         }
 
         public async Task UpdateAsync(Author author)

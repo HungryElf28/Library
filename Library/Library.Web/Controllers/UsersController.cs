@@ -59,6 +59,7 @@ namespace Library.Web.Controllers
             return Ok(result);
         }
 
+        [Authorize]
         [HttpGet("reading")]
         public async Task<IActionResult> GetReading()
         {
@@ -76,6 +77,51 @@ namespace Library.Web.Controllers
             });
 
             return Ok(result);
+        }
+
+        [Authorize]
+        [HttpPost("reading/{bookId}")]
+        public async Task<IActionResult> SaveProgress(int bookId, [FromBody] int page)
+        {
+            var userId = User.GetUserId();
+            await _service.SaveProgress(userId, bookId, page);
+            return Ok();
+        }
+
+        [Authorize]
+        [HttpPost("subscription")]
+        public async Task<IActionResult> UpdateSubscription([FromBody] bool isSubscribed)
+        {
+            var userId = User.GetUserId();
+            var expiresAt = isSubscribed ? DateTime.UtcNow.AddMonths(1) : (DateTime?)null;
+            await _service.UpdateSubscription(userId, isSubscribed, expiresAt);
+            return Ok();
+        }
+
+        [Authorize]
+        [HttpGet("all")]
+        public async Task<IActionResult> GetAllUsers()
+        {
+            if (!User.IsAdmin()) return Forbid();
+            return Ok(await _service.GetAllUsers());
+        }
+
+        [Authorize]
+        [HttpDelete("{id}")]
+        public async Task<IActionResult> DeleteUser(int id)
+        {
+            if (!User.IsAdmin() && User.GetUserId() != id) return Forbid();
+            await _service.DeleteUser(id);
+            return NoContent();
+        }
+
+        [Authorize]
+        [HttpPost("{id}/role")]
+        public async Task<IActionResult> ChangeRole(int id, [FromBody] string roleName)
+        {
+            if (!User.IsAdmin()) return Forbid();
+            await _service.ChangeRole(id, roleName);
+            return Ok();
         }
     }
 }

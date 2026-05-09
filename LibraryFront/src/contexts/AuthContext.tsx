@@ -17,9 +17,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    const currentUser = api.auth.getCurrentUser();
-    setUser(currentUser);
-    setIsLoading(false);
+    const initAuth = async () => {
+      const token = api.auth.getToken();
+      if (token) {
+        try {
+          const currentUser = await api.auth.getMe();
+          setUser(currentUser);
+        } catch (error) {
+          console.error('Failed to restore session:', error);
+          await api.auth.logout();
+        }
+      }
+      setIsLoading(false);
+    };
+
+    initAuth();
   }, []);
 
   const login = async (data: LoginDto) => {

@@ -39,15 +39,26 @@ public class UserRepository : IUserRepository
 
     public async Task<User?> GetByLoginAsync(string login)
     {
-        var ef = await _context.Users
+        var efUser = await _context.Users
+            .Include(u => u.Role)
             .FirstOrDefaultAsync(u => u.Login == login);
 
-        return ef == null ? null : UserMapper.ToDomain(ef);
+        return efUser == null ? null : UserMapper.ToDomain(efUser);
+    }
+
+    public async Task<User?> GetByIdAsync(int id)
+    {
+        var efUser = await _context.Users
+            .Include(u => u.Role)
+            .FirstOrDefaultAsync(u => u.Id == id);
+
+        return efUser == null ? null : UserMapper.ToDomain(efUser);
     }
 
     public async Task<(User user, string passwordHash)?> GetWithPasswordAsync(string login)
     {
         var ef = await _context.Users
+            .Include(u => u.Role)
             .FirstOrDefaultAsync(u => u.Login == login);
 
         if (ef == null)
@@ -179,5 +190,46 @@ public class UserRepository : IUserRepository
                 r.LastOpened
             ))
             .ToListAsync();
+    }
+
+    public async Task UpdateSubscriptionAsync(int userId, bool isSubscribed, DateTime? expiresAt)
+    {
+        var user = await _context.Users.FindAsync(userId);
+        if (user == null) throw new Exception("User not found");
+
+        user.IsSubscribed = isSubscribed;
+        user.SubscriptionExpiresAt = expiresAt;
+
+        await _context.SaveChangesAsync();
+    }
+
+    public async Task DeleteAsync(int userId)
+    {
+        var user = await _context.Users.FindAsync(userId);
+        if (user != null)
+        {
+            _context.Users.Remove(user);
+            await _context.SaveChangesAsync();
+        }
+    }
+
+    public async Task ChangeRoleAsync(int userId, string roleName)
+    {
+        var user = await _context.Users.FindAsync(userId);
+        if (user == null) throw new Exception("User not found");
+
+        var roleId = await GetRoleIdByNameAsync(roleName);
+        user.RoleId = roleId;
+
+        await _context.SaveChangesAsync();
+    }
+
+    public async Task<List<User>> GetAllAsync()
+    {
+        var users = await _context.Users
+            .Include(u => u.Role)
+            .ToListAsync();
+
+        return users.Select(UserMapper.ToDomain).ToList();
     }
 }

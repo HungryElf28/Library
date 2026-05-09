@@ -273,6 +273,11 @@ public partial class LibraryDbContext : DbContext
                 .HasColumnName("tag");
         });
 
+        modelBuilder.Entity<Role>().HasData(
+            new Role { Id = 1, Role1 = "Admin" },
+            new Role { Id = 2, Role1 = "User" }
+        );
+
         modelBuilder.Entity<User>(entity =>
         {
             entity.HasKey(e => e.Id).HasName("Users_pkey");
@@ -295,6 +300,11 @@ public partial class LibraryDbContext : DbContext
                 .HasColumnType("character varying")
                 .HasColumnName("password_hash");
             entity.Property(e => e.RoleId).HasColumnName("role_id");
+            entity.Property(e => e.IsSubscribed)
+                .HasColumnName("IsSubscribed")
+                .HasDefaultValue(false);
+            entity.Property(e => e.SubscriptionExpiresAt)
+                .HasColumnName("SubscriptionExpiresAt");
 
             entity.HasOne(d => d.Role).WithMany(p => p.Users)
                 .HasForeignKey(d => d.RoleId)
