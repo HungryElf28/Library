@@ -20,7 +20,10 @@ public class AuthService
     public async Task<(string token, User user)> RegisterAsync(string login, string email, string password)
     {
         if (await _repo.ExistsByLoginAsync(login))
-            throw new Exception("User already exists");
+            throw new Exception("User with this login already exists");
+
+        if (await _repo.ExistsByEmailAsync(email))
+            throw new Exception("User with this email already exists");
 
         var user = new User(0, login, email);
 

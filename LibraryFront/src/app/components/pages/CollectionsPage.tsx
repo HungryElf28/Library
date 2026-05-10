@@ -4,6 +4,7 @@ import { api } from '../../../services/api';
 import { Plus, Edit, Trash2, Loader, BookOpen, X } from 'lucide-react';
 import { BookCard } from '../BookCard';
 import { useAuth } from '../../../contexts/AuthContext';
+import { API_BASE } from '../../../config';
 
 interface CollectionsPageProps {
   onBookClick: (bookId: number) => void;

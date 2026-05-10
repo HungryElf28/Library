@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import ePub from 'epubjs';
 import { Book, Bookmark } from '../../../types';
 import { api } from '../../../services/api';
+import { API_BASE } from '../../../config';
 import {
   ArrowLeft,
   ChevronLeft,
@@ -15,6 +16,7 @@ import {
   X,
   Loader,
   Download,
+  Edit,
 } from 'lucide-react';
 import { useAuth } from '../../../contexts/AuthContext';
 import { useReader } from '../../../contexts/ReaderContext';
@@ -115,21 +117,41 @@ function parseFb2ToText(xml: string) {
   }
 }
 
-function splitTextToPages(text: string, pageSize = 3000) {
+function splitTextToPages(text: string, pageSize: number) {
   const chunks: string[] = [];
-  let current = '';
+  let currentPos = 0;
 
-  const paragraphs = text.split(/\n\n+/).map((p) => p.trim()).filter(Boolean);
-  for (const paragraph of paragraphs) {
-    if (current.length + paragraph.length + 2 > pageSize && current.length > 0) {
-      chunks.push(current.trim());
-      current = '';
+  while (currentPos < text.length) {
+    let endPos = currentPos + pageSize;
+    
+    if (endPos >= text.length) {
+      chunks.push(text.slice(currentPos).trim());
+      break;
     }
-    current += `${paragraph}\n\n`;
-  }
 
-  if (current.trim().length > 0) {
-    chunks.push(current.trim());
+
+    let splitPoint = -1;
+    const lookRange = Math.min(Math.floor(pageSize * 0.3), 500);
+
+    for (let i = endPos; i > endPos - lookRange && i > currentPos; i--) {
+      if (/\s/.test(text[i])) {
+        splitPoint = i;
+        break;
+      }
+    }
+
+    if (splitPoint === -1) {
+      for (let i = endPos; i < endPos + lookRange && i < text.length; i++) {
+        if (/\s/.test(text[i])) {
+          splitPoint = i;
+          break;
+        }
+      }
+    }
+
+    const finalSplit = splitPoint !== -1 ? splitPoint : endPos;
+    chunks.push(text.slice(currentPos, finalSplit).trim());
+    currentPos = finalSplit;
   }
 
   return chunks.length > 0 ? chunks : [text.trim()];
@@ -139,15 +161,19 @@ export function BookReaderPage({ bookId, onBack }: BookReaderPageProps) {
   const { user } = useAuth();
   const { settings, updateSettings } = useReader();
   const readerTopRef = useRef<HTMLDivElement | null>(null);
-  const epubContainerRef = useRef<HTMLDivElement | null>(null);
+  const [container, setContainer] = useState<HTMLDivElement | null>(null);
   const epubBookRef = useRef<any>(null);
   const epubRenditionRef = useRef<any>(null);
+  const initialLoadRef = useRef(true);
 
   const [book, setBook] = useState<Book | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [bookmarks, setBookmarks] = useState<Bookmark[]>([]);
   const [showSettings, setShowSettings] = useState(false);
   const [showBookmarks, setShowBookmarks] = useState(false);
+  const [showBookmarkModal, setShowBookmarkModal] = useState(false);
+  const [editingBookmark, setEditingBookmark] = useState<Bookmark | null>(null);
+  const [bookmarkNote, setBookmarkNote] = useState('');
   const [loading, setLoading] = useState(true);
   const [fileUrl, setFileUrl] = useState('');
   const [viewerType, setViewerType] = useState<ViewerType>('unknown');
@@ -163,7 +189,15 @@ export function BookReaderPage({ bookId, onBack }: BookReaderPageProps) {
   const totalPages = canNavigateText ? Math.max(1, textPages.length) : Math.max(1, epubTotalPages);
 
   useEffect(() => {
-    setCurrentPage(1);
+    if (rawText) {
+      const pages = splitTextToPages(rawText, settings.pageSize);
+      setTextPages(pages);
+      // Try to stay on the same relative position
+      // (very rough approximation)
+    }
+  }, [settings.pageSize]);
+
+  useEffect(() => {
     loadBook();
     loadBookmarks();
   }, [bookId]);
@@ -173,7 +207,12 @@ export function BookReaderPage({ bookId, onBack }: BookReaderPageProps) {
 
     const type = getViewerType(book.textFile);
     setViewerType(type);
-    setFileUrl(book.textFile);
+    
+    const formattedFileUrl = book.textFile.startsWith('http') 
+      ? book.textFile 
+      : `${API_BASE}${book.textFile.startsWith('/') ? '' : '/'}${book.textFile}`;
+    
+    setFileUrl(formattedFileUrl);
     setReaderError('');
     setTextPages([]);
     setRawText('');
@@ -181,16 +220,24 @@ export function BookReaderPage({ bookId, onBack }: BookReaderPageProps) {
     setEpubReady(false);
 
     if (textViewerTypes.includes(type)) {
-      loadTextFile(book.textFile, type);
+      loadTextFile(formattedFileUrl, type);
     }
   }, [book?.textFile]);
 
   useEffect(() => {
-    if (viewerType !== 'epub' || !fileUrl || !epubContainerRef.current) return;
+    if (viewerType !== 'epub' || !fileUrl || !container) {
+      return;
+    }
 
-    epubContainerRef.current.innerHTML = '';
-    const epubBook = ePub(fileUrl);
-    const rendition = epubBook.renderTo(epubContainerRef.current, {
+    console.log('EPUB Reader: Starting initialization...', { fileUrl });
+    container.innerHTML = '';
+    
+    const absoluteFileUrl = fileUrl.startsWith('http') 
+      ? fileUrl 
+      : `${window.location.origin}${fileUrl.startsWith('/') ? '' : '/'}${fileUrl}`;
+      
+    const epubBook = ePub(absoluteFileUrl);
+    const rendition = epubBook.renderTo(container, {
       width: '100%',
       height: '100%',
       spread: 'none',
@@ -201,29 +248,56 @@ export function BookReaderPage({ bookId, onBack }: BookReaderPageProps) {
     epubRenditionRef.current = rendition;
 
     rendition.on('relocated', (location: any) => {
-      const page = location?.start?.location ? location.start.location + 1 : 1;
+      const page = location?.start?.location >= 0 ? location.start.location + 1 : 1;
+      console.log('EPUB relocated to:', page);
       setCurrentPage(page);
     });
 
     rendition.display().then(() => {
+      console.log('EPUB: Rendition displayed');
       setEpubReady(true);
       applyEpubTheme();
-    }).catch(() => {
-      setReaderError('Не удалось открыть EPUB-файл в читалке.');
+      
+      // If we have a saved page, try to jump to it once
+      if (initialLoadRef.current && currentPage > 1) {
+        console.log('EPUB: Jumping to initial page:', currentPage);
+        initialLoadRef.current = false;
+        setTimeout(() => {
+          if (epubBook.locations.length() > 0) {
+            const cfi = epubBook.locations.cfiFromLocation(currentPage - 1);
+            rendition.display(cfi);
+          }
+        }, 500);
+      } else {
+        initialLoadRef.current = false;
+      }
+    }).catch(err => {
+      console.error('EPUB Error:', err);
+      setReaderError('Ошибка при отрисовке книги.');
     });
 
-    epubBook.ready
-      .then(() => epubBook.locations.generate(1000))
-      .then(() => setEpubTotalPages(epubBook.locations.length() || 1))
-      .catch(() => setEpubTotalPages(1));
+    epubBook.ready.then(() => {
+      console.log('EPUB: Book ready');
+      return epubBook.locations.generate(1000);
+    }).then(() => {
+      const total = epubBook.locations.length() || 1;
+      setEpubTotalPages(total);
+      console.log('EPUB: Locations generated, total:', total);
+      
+      // Auto-save progress once we know total pages
+      if (book && user && user.role !== 'guest') {
+        api.users.updateReadingProgress(bookId, currentPage, total);
+      }
+    });
 
     return () => {
+      console.log('EPUB Reader: Cleaning up...');
       rendition.destroy();
       epubBook.destroy();
       epubBookRef.current = null;
       epubRenditionRef.current = null;
     };
-  }, [viewerType, fileUrl]);
+  }, [viewerType, fileUrl, container]);
 
   useEffect(() => {
     applyEpubTheme();
@@ -243,6 +317,15 @@ export function BookReaderPage({ bookId, onBack }: BookReaderPageProps) {
       scrollReaderToTop();
     }
   }, [currentPage, canNavigateText]);
+
+  useEffect(() => {
+    return () => {
+      // Save progress on unmount - ONLY if we have total pages
+      if (book && canNavigate && totalPages > 0) {
+        api.users.updateReadingProgress(bookId, currentPage, totalPages);
+      }
+    };
+  }, [bookId, currentPage, book, user, canNavigate, totalPages]);
 
   const scrollReaderToTop = () => {
     readerTopRef.current?.scrollIntoView({ block: 'start' });
@@ -278,6 +361,23 @@ export function BookReaderPage({ bookId, onBack }: BookReaderPageProps) {
     try {
       const data = await api.books.getById(bookId);
       setBook(data);
+
+      if (user && user.role !== 'guest') {
+        try {
+          const progressData = await api.users.getProgress(bookId);
+          if (progressData) {
+            setCurrentPage(progressData.page || 1);
+          }
+        } catch (err) {
+          console.error('Error loading progress:', err);
+        }
+      } else {
+        // Guest progress from localStorage
+        const savedProgress = JSON.parse(localStorage.getItem('library_reading_progress') || '{}');
+        if (savedProgress[bookId]) {
+          setCurrentPage(savedProgress[bookId].page || 1);
+        }
+      }
     } catch (error) {
       console.error('Error loading book:', error);
       setReaderError('Не удалось загрузить книгу.');
@@ -298,7 +398,7 @@ export function BookReaderPage({ bookId, onBack }: BookReaderPageProps) {
       if (type === 'rtf') text = parseRtfToText(content);
       if (type === 'fb2') text = parseFb2ToText(content);
 
-      const pages = splitTextToPages(text);
+      const pages = splitTextToPages(text, settings.pageSize);
       setRawText(text);
       setTextPages(pages);
       setCurrentPage(1);
@@ -322,17 +422,32 @@ export function BookReaderPage({ bookId, onBack }: BookReaderPageProps) {
     }
   };
 
-  const handleAddBookmark = async () => {
+  const handleAddBookmark = () => {
     if (!user || user.role === 'guest' || !canNavigate) return;
+    setEditingBookmark(null);
+    setBookmarkNote('');
+    setShowBookmarkModal(true);
+  };
 
-    const note = prompt('Добавить заметку к закладке (необязательно):');
-    if (note === null) return;
+  const handleEditBookmark = (bookmark: Bookmark) => {
+    setEditingBookmark(bookmark);
+    setBookmarkNote(bookmark.note || '');
+    setShowBookmarkModal(true);
+    setShowBookmarks(false);
+  };
 
+  const handleSaveBookmark = async () => {
     try {
-      const bookmark = await api.bookmarks.create(bookId, currentPage, note || undefined);
-      setBookmarks([...bookmarks, bookmark]);
+      if (editingBookmark) {
+        await api.bookmarks.update(editingBookmark.id, bookmarkNote);
+        setBookmarks(bookmarks.map(b => b.id === editingBookmark.id ? { ...b, note: bookmarkNote } : b));
+      } else {
+        const bookmark = await api.bookmarks.create(bookId, currentPage, bookmarkNote);
+        setBookmarks([...bookmarks, bookmark]);
+      }
+      setShowBookmarkModal(false);
     } catch (error) {
-      console.error('Error adding bookmark:', error);
+      console.error('Error saving bookmark:', error);
     }
   };
 
@@ -396,7 +511,7 @@ export function BookReaderPage({ bookId, onBack }: BookReaderPageProps) {
     sepia: 'bg-[#f5f1e8] text-stone-900',
   };
 
-  const currentBookmark = bookmarks.find((b) => b.page === currentPage);
+  const currentBookmark = Array.isArray(bookmarks) ? bookmarks.find((b) => b.page === currentPage) : null;
   const pageText = textPages[currentPage - 1] || rawText;
   const isDarkReader = settings.theme === 'dark';
   const isSepiaReader = settings.theme === 'sepia';
@@ -511,6 +626,23 @@ export function BookReaderPage({ bookId, onBack }: BookReaderPageProps) {
                   </button>
                 </div>
               </div>
+
+              {canNavigateText && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-stone-300 mb-3">Символов на странице</label>
+                  <div className="grid grid-cols-3 gap-2">
+                    {[300, 1000, 3000].map((size) => (
+                      <button
+                        key={size}
+                        onClick={() => updateSettings({ pageSize: size })}
+                        className={`px-3 py-2 border rounded-lg text-sm ${settings.pageSize === size ? 'border-amber-600 bg-amber-50 text-amber-900' : 'border-gray-300 hover:bg-gray-50 dark:border-stone-600 dark:hover:bg-stone-700'}`}
+                      >
+                        {size}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -527,7 +659,7 @@ export function BookReaderPage({ bookId, onBack }: BookReaderPageProps) {
             </div>
 
             <div className="space-y-3">
-              {bookmarks.length === 0 ? (
+              {!Array.isArray(bookmarks) || bookmarks.length === 0 ? (
                 <p className="text-gray-600 dark:text-stone-400 text-center py-8">У вас пока нет закладок</p>
               ) : (
                 bookmarks.map((bookmark) => (
@@ -537,13 +669,62 @@ export function BookReaderPage({ bookId, onBack }: BookReaderPageProps) {
                         <p className="font-medium text-gray-900 dark:text-stone-100">Страница {bookmark.page}</p>
                         {bookmark.note && <p className="text-sm text-gray-600 dark:text-stone-400 mt-1">{bookmark.note}</p>}
                       </button>
-                      <button onClick={() => handleDeleteBookmark(bookmark.id)} className="ml-2 p-1 text-red-600 hover:bg-red-50 rounded">
-                        <X className="w-4 h-4" />
-                      </button>
+                      <div className="flex gap-1 ml-2">
+                        <button onClick={() => handleEditBookmark(bookmark)} className="p-1 text-amber-600 hover:bg-amber-50 rounded" title="Редактировать заметку">
+                          <Edit className="w-4 h-4" />
+                        </button>
+                        <button onClick={() => handleDeleteBookmark(bookmark.id)} className="p-1 text-red-600 hover:bg-red-50 rounded" title="Удалить">
+                          <X className="w-4 h-4" />
+                        </button>
+                      </div>
                     </div>
                   </div>
                 ))
               )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showBookmarkModal && (
+        <div className="fixed inset-0 z-[60] bg-black/50 flex items-center justify-center p-4">
+          <div className="bg-card rounded-lg shadow-xl max-w-md w-full p-6">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-xl font-semibold">
+                {editingBookmark ? 'Редактировать закладку' : 'Добавить закладку'}
+              </h2>
+              <button onClick={() => setShowBookmarkModal(false)} className="p-1 hover:bg-gray-100 rounded">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            
+            <p className="text-sm text-gray-600 mb-4">
+              Страница {editingBookmark ? editingBookmark.page : currentPage}
+            </p>
+
+            <div className="mb-6">
+              <label className="block text-sm font-medium text-gray-700 mb-2">Заметка</label>
+              <textarea
+                value={bookmarkNote}
+                onChange={(e) => setBookmarkNote(e.target.value)}
+                placeholder="Добавьте описание для закладки..."
+                className="w-full px-3 py-2 border border-amber-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500 h-24"
+              />
+            </div>
+
+            <div className="flex justify-end gap-3">
+              <button
+                onClick={() => setShowBookmarkModal(false)}
+                className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg font-medium"
+              >
+                Отмена
+              </button>
+              <button
+                onClick={handleSaveBookmark}
+                className="px-4 py-2 bg-amber-600 text-white rounded-lg hover:bg-amber-700 font-medium"
+              >
+                Сохранить
+              </button>
             </div>
           </div>
         </div>
@@ -579,7 +760,7 @@ export function BookReaderPage({ bookId, onBack }: BookReaderPageProps) {
                 <Loader className="w-8 h-8 text-amber-600 animate-spin" />
               </div>
             )}
-            <div ref={epubContainerRef} className={`w-full h-full ${epubReady ? 'block' : 'hidden'}`} />
+            <div ref={setContainer} className={`w-full h-full ${epubReady ? 'block' : 'hidden'}`} />
           </div>
         ) : viewerType === 'download' || viewerType === 'unknown' ? (
           <div className={`p-6 rounded-lg border ${readerSurfaceClass}`}>

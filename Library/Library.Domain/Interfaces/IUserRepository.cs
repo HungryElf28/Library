@@ -11,6 +11,7 @@ namespace Library.Domain.Interfaces
     {
         Task AddAsync(User user, string passwordHash, int roleId);
         Task<bool> ExistsByLoginAsync(string login);
+        Task<bool> ExistsByEmailAsync(string email);
         Task<User?> GetByLoginAsync(string login);
         Task<User?> GetByIdAsync(int id);
         Task<(User user, string passwordHash)?> GetWithPasswordAsync(string login);
@@ -19,8 +20,8 @@ namespace Library.Domain.Interfaces
         Task<List<Book>> GetFavoritesAsync(int userId);
         Task<int> GetRoleIdByNameAsync(string roleName);
         Task<(User user, string passwordHash, string roleName)?> GetWithRoleAsync(string login);
-        Task SaveProgressAsync(int userId, int bookId, int page);
-        Task<int?> GetProgressAsync(int userId, int bookId);
+        Task SaveProgressAsync(int userId, int bookId, int page, int totalPages);
+        Task<ReadingBook?> GetProgressAsync(int userId, int bookId);
         Task<List<ReadingBook>> GetReadingAsync(int userId);
         Task UpdateSubscriptionAsync(int userId, bool isSubscribed, DateTime? expiresAt);
         Task DeleteAsync(int userId);

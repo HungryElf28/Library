@@ -35,6 +35,7 @@ export function AuthorEditModal({ author, onClose, onSave }: AuthorEditModalProp
       }
 
       onSave();
+      onClose();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Ошибка при сохранении');
     } finally {

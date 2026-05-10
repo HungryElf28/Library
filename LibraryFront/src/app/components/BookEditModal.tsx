@@ -3,6 +3,7 @@ import { Book, Author, Genre, Tag, CreateBookDto } from '../../types';
 import { api } from '../../services/api';
 import { X, Loader, Save, Plus } from 'lucide-react';
 import { EntityPickerModal } from './EntityPickerModal';
+import { API_BASE } from '../../config';
 
 interface BookEditModalProps {
   book?: Book;
@@ -20,6 +21,7 @@ export function BookEditModal({ book, onClose, onSave }: BookEditModalProps) {
     textFile: undefined,
     coverFile: undefined,
   });
+  
   const [selectedAuthors, setSelectedAuthors] = useState<Author[]>(book?.authors || []);
   const [selectedGenres, setSelectedGenres] = useState<Genre[]>(book?.genres || []);
   const [selectedTags, setSelectedTags] = useState<Tag[]>(book?.tags || []);
@@ -32,6 +34,20 @@ export function BookEditModal({ book, onClose, onSave }: BookEditModalProps) {
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+
+  const getCoverPreview = () => {
+    if (formData.coverFile instanceof File) {
+      return URL.createObjectURL(formData.coverFile);
+    }
+    if (book?.coverFile) {
+      return book.coverFile.startsWith('http') 
+        ? book.coverFile 
+        : `${API_BASE}${book.coverFile.startsWith('/') ? '' : '/'}${book.coverFile}`;
+    }
+    return null;
+  };
+
+  const coverPreview = getCoverPreview();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -121,7 +137,6 @@ export function BookEditModal({ book, onClose, onSave }: BookEditModalProps) {
           )}
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-            {/* Left Column: Basic Info */}
             <div className="space-y-6">
               <div>
                 <label className="block text-sm font-bold text-gray-700 dark:text-stone-300 mb-2 uppercase tracking-wider">
@@ -151,7 +166,6 @@ export function BookEditModal({ book, onClose, onSave }: BookEditModalProps) {
               </div>
             </div>
 
-            {/* Right Column: Files & Assets */}
             <div className="space-y-6">
               <div className="p-6 bg-amber-50/50 dark:bg-stone-900/30 rounded-2xl border border-amber-100 dark:border-stone-800">
                 <label className="block text-sm font-bold text-gray-800 dark:text-stone-200 mb-4 uppercase tracking-wider">
@@ -160,10 +174,10 @@ export function BookEditModal({ book, onClose, onSave }: BookEditModalProps) {
                 
                 <div className="space-y-6">
                   <div>
-                    <span className="block text-xs font-medium text-gray-500 dark:text-stone-400 mb-2">Текстовый файл (epub, fb2, pdf...)*</span>
+                    <span className="block text-xs font-medium text-gray-500 dark:text-stone-400 mb-2">Текстовый файл (epub, fb2, txt...)*</span>
                     <input
                       type="file"
-                      accept=".epub,.fb2,.txt,.rtf,.pdf,.mobi,.azw3"
+                      accept=".epub,application/epub+zip,.fb2,application/x-fictionbook+xml,.txt,text/plain,.rtf,application/rtf,.pdf,application/pdf,.mobi,application/x-mobipocket-ebook,.azw3,application/vnd.amazon.ebook"
                       onChange={(e) => setFormData({ ...formData, textFile: e.target.files?.[0] })}
                       required={!book}
                       className="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-bold file:bg-amber-600 file:text-white hover:file:bg-amber-700 cursor-pointer"
@@ -181,10 +195,10 @@ export function BookEditModal({ book, onClose, onSave }: BookEditModalProps) {
                           className="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-bold file:bg-stone-800 file:text-white hover:file:bg-black cursor-pointer"
                         />
                       </div>
-                      {(formData.coverFile instanceof File || book?.coverFile) && (
+                      {coverPreview && (
                         <div className="w-20 h-28 bg-gray-200 rounded-lg overflow-hidden shadow-md flex-shrink-0 border border-white dark:border-stone-700">
                           <img
-                            src={formData.coverFile instanceof File ? URL.createObjectURL(formData.coverFile) : book?.coverFile}
+                            src={coverPreview}
                             className="w-full h-full object-cover"
                             alt="Preview"
                           />
@@ -197,12 +211,10 @@ export function BookEditModal({ book, onClose, onSave }: BookEditModalProps) {
             </div>
           </div>
 
-          {/* Relations Selection Section */}
           <div className="space-y-6 pt-6 border-t border-amber-100 dark:border-stone-800">
              <h3 className="text-sm font-bold text-gray-700 dark:text-stone-300 uppercase tracking-wider">Связи и категории</h3>
              
              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                {/* Authors */}
                 <div className="space-y-3">
                   <div className="flex items-center justify-between">
                     <span className="text-sm font-semibold text-gray-700 dark:text-stone-300">Авторы*</span>
@@ -229,7 +241,6 @@ export function BookEditModal({ book, onClose, onSave }: BookEditModalProps) {
                   </div>
                 </div>
 
-                {/* Genres */}
                 <div className="space-y-3">
                   <div className="flex items-center justify-between">
                     <span className="text-sm font-semibold text-gray-700 dark:text-stone-300">Жанры</span>
@@ -256,7 +267,6 @@ export function BookEditModal({ book, onClose, onSave }: BookEditModalProps) {
                   </div>
                 </div>
 
-                {/* Tags */}
                 <div className="space-y-3">
                   <div className="flex items-center justify-between">
                     <span className="text-sm font-semibold text-gray-700 dark:text-stone-300">Теги</span>

@@ -33,8 +33,16 @@ public class UserRepository : IUserRepository
 
     public async Task<bool> ExistsByLoginAsync(string login)
     {
+        var normalized = login.ToUpper();
         return await _context.Users
-            .AnyAsync(u => u.Login == login);
+            .AnyAsync(u => u.NormalizedLogin == normalized);
+    }
+
+    public async Task<bool> ExistsByEmailAsync(string email)
+    {
+        var normalized = email.ToUpper();
+        return await _context.Users
+            .AnyAsync(u => u.NormalizedEmail == normalized);
     }
 
     public async Task<User?> GetByLoginAsync(string login)
@@ -141,12 +149,12 @@ public class UserRepository : IUserRepository
             .FirstAsync();
     }
 
-    public async Task SaveProgressAsync(int userId, int bookId, int page)
+    public async Task SaveProgressAsync(int userId, int bookId, int page, int totalPages)
     {
         var entity = await _context.ReadingBooks
             .FirstOrDefaultAsync(r => r.UserId == userId && r.BookId == bookId);
 
-        var today = DateOnly.FromDateTime(DateTime.UtcNow);
+        var now = DateTime.UtcNow;
 
         if (entity == null)
         {
@@ -155,7 +163,8 @@ public class UserRepository : IUserRepository
                 UserId = userId,
                 BookId = bookId,
                 Page = page,
-                LastOpened = today
+                TotalPages = totalPages,
+                LastOpened = now
             };
 
             _context.ReadingBooks.Add(entity);
@@ -163,18 +172,33 @@ public class UserRepository : IUserRepository
         else
         {
             entity.Page = page;
-            entity.LastOpened = today;
+            // Only update TotalPages if we got a positive value
+            if (totalPages > 0)
+            {
+                entity.TotalPages = totalPages;
+            }
+            entity.LastOpened = now;
         }
 
         await _context.SaveChangesAsync();
     }
 
-    public async Task<int?> GetProgressAsync(int userId, int bookId)
+    public async Task<ReadingBook?> GetProgressAsync(int userId, int bookId)
     {
-        var entity = await _context.ReadingBooks
+        var r = await _context.ReadingBooks
+            .Include(r => r.Book)
             .FirstOrDefaultAsync(r => r.UserId == userId && r.BookId == bookId);
 
-        return entity?.Page;
+        if (r == null) return null;
+
+        return new ReadingBook(
+            r.BookId,
+            r.Book.Title,
+            r.Book.CoverFile,
+            r.Page,
+            r.TotalPages,
+            r.LastOpened
+        );
     }
 
     public async Task<List<ReadingBook>> GetReadingAsync(int userId)
@@ -187,6 +211,7 @@ public class UserRepository : IUserRepository
                 r.Book.Title,
                 r.Book.CoverFile,
                 r.Page,
+                r.TotalPages,
                 r.LastOpened
             ))
             .ToListAsync();

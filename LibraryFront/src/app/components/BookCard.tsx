@@ -1,6 +1,7 @@
 import React from 'react';
 import { Star, Heart } from 'lucide-react';
 import { BookListItem } from '../../types';
+import { API_BASE } from '../../config';
 
 interface BookCardProps {
   book: BookListItem;
@@ -11,6 +12,10 @@ interface BookCardProps {
 }
 
 export function BookCard({ book, onClick, onFavoriteToggle, isFavorite, showFavoriteButton }: BookCardProps) {
+  const coverUrl = book.coverFile 
+    ? (book.coverFile.startsWith('http') ? book.coverFile : `${API_BASE}${book.coverFile.startsWith('/') ? '' : '/'}${book.coverFile}`)
+    : null;
+
   const handleFavoriteClick = (e: React.MouseEvent) => {
     e.stopPropagation();
     if (onFavoriteToggle) {
@@ -24,9 +29,9 @@ export function BookCard({ book, onClick, onFavoriteToggle, isFavorite, showFavo
       className="group bg-card rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-all cursor-pointer border border-amber-200 dark:border-stone-700"
     >
       <div className="relative aspect-[2/3] bg-gray-100 overflow-hidden">
-        {book.coverFile ? (
+        {coverUrl ? (
           <img
-            src={book.coverFile}
+            src={coverUrl}
             alt={book.title}
             className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
           />

@@ -42,9 +42,14 @@ namespace Library.Application.Services
             return await _repo.GetReadingAsync(userId);
         }
 
-        public async Task SaveProgress(int userId, int bookId, int page)
+        public async Task SaveProgress(int userId, int bookId, int page, int totalPages)
         {
-            await _repo.SaveProgressAsync(userId, bookId, page);
+            await _repo.SaveProgressAsync(userId, bookId, page, totalPages);
+        }
+
+        public async Task<ReadingBook?> GetProgress(int userId, int bookId)
+        {
+            return await _repo.GetProgressAsync(userId, bookId);
         }
 
         public async Task UpdateSubscription(int userId, bool isSubscribed, DateTime? expiresAt)

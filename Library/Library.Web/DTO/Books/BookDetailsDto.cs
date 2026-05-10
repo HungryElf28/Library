@@ -11,7 +11,8 @@ namespace Library.Web.DTO.Books
         public string TextFile { get; set; } = null!;
         public string? CoverFile { get; set; }
         public string? Description { get; set; }
-        public double AverageRate { get; set; }
+        public double AverageRating { get; set; }
+        public int ReviewsCount { get; set; }
 
         public List<AuthorDto> Authors { get; set; } = new();
         public List<GenreDto> Genres { get; set; }

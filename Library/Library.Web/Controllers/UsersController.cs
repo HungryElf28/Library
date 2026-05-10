@@ -99,7 +99,9 @@ namespace Library.Web.Controllers
                     b.Title,
                     b.CoverFile,
                     b.Page,
-                    b.LastOpened
+                    b.TotalPages,
+                    b.LastOpened,
+                    Progress = b.TotalPages > 0 ? (int)Math.Round((double)b.Page / b.TotalPages * 100) : 0
                 });
 
             return Ok(PagedResponseDto<object>.Create(items, total, page, pageSize));
@@ -107,11 +109,20 @@ namespace Library.Web.Controllers
 
         [Authorize]
         [HttpPost("reading/{bookId}")]
-        public async Task<IActionResult> SaveProgress(int bookId, [FromBody] int page)
+        public async Task<IActionResult> SaveProgress(int bookId, [FromBody] ReadingProgressDto dto)
         {
             var userId = User.GetUserId();
-            await _service.SaveProgress(userId, bookId, page);
+            await _service.SaveProgress(userId, bookId, dto.Page, dto.TotalPages);
             return Ok();
+        }
+
+        [Authorize]
+        [HttpGet("reading/{bookId}")]
+        public async Task<IActionResult> GetProgress(int bookId)
+        {
+            var userId = User.GetUserId();
+            var progress = await _service.GetProgress(userId, bookId);
+            return Ok(progress);
         }
 
         [Authorize]
@@ -170,5 +181,11 @@ namespace Library.Web.Controllers
             await _service.ChangeRole(id, roleName);
             return Ok();
         }
+    }
+
+    public class ReadingProgressDto
+    {
+        public int Page { get; set; }
+        public int TotalPages { get; set; }
     }
 }

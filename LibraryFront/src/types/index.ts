@@ -161,4 +161,5 @@ export interface ReaderSettings {
   fontFamily: string;
   theme: 'light' | 'dark' | 'sepia';
   lineHeight: number;
+  pageSize: number;
 }

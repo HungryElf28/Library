@@ -11,6 +11,7 @@ const defaultSettings: ReaderSettings = {
   fontFamily: 'Georgia, serif',
   theme: 'light',
   lineHeight: 1.6,
+  pageSize: 1000,
 };
 
 const SETTINGS_KEY = 'library_reader_settings';

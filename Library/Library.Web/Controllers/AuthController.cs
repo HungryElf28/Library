@@ -23,18 +23,25 @@ namespace Library.Web.Controllers
         [HttpPost("register")]
         public async Task<IActionResult> Register(RegisterDto dto)
         {
-            var result = await _service.RegisterAsync(dto.Login, dto.Email, dto.Password);
-            return Ok(new 
-            { 
-                token = result.token, 
-                user = new 
-                {
-                    id = result.user.Id,
-                    login = result.user.Login,
-                    email = result.user.Email,
-                    role = result.user.RoleName.ToLower() == "admin" ? "admin" : "client"
-                }
-            });
+            try
+            {
+                var result = await _service.RegisterAsync(dto.Login, dto.Email, dto.Password);
+                return Ok(new 
+                { 
+                    token = result.token, 
+                    user = new 
+                    {
+                        id = result.user.Id,
+                        login = result.user.Login,
+                        email = result.user.Email,
+                        role = result.user.RoleName.ToLower() == "admin" ? "admin" : "client"
+                    }
+                });
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
         }
 
         [HttpPost("login")]

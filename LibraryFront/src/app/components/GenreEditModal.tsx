@@ -29,6 +29,7 @@ export function GenreEditModal({ genre, onClose, onSave }: GenreEditModalProps) 
       }
 
       onSave();
+      onClose();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Ошибка при сохранении');
     } finally {

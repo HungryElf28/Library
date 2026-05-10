@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
-import { Search, BookOpen, User, LogOut, Heart, BookMarked, Settings } from 'lucide-react';
+import { Search, BookOpen, User, LogOut, Heart, BookMarked, Settings, Sun, Moon } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
+import { useTheme } from '../../contexts/ThemeContext';
 
 interface HeaderProps {
   onSearch: (query: string) => void;
@@ -10,6 +11,7 @@ interface HeaderProps {
 
 export function Header({ onSearch, onNavigate, currentPage }: HeaderProps) {
   const { user, logout } = useAuth();
+  const { theme, toggleTheme } = useTheme();
   const [searchQuery, setSearchQuery] = useState('');
   const [showUserMenu, setShowUserMenu] = useState(false);
 
@@ -88,6 +90,14 @@ export function Header({ onSearch, onNavigate, currentPage }: HeaderProps) {
           </div>
 
           <div className="flex items-center gap-4">
+            <button
+              onClick={toggleTheme}
+              className="p-2 rounded-lg hover:bg-amber-50 dark:hover:bg-stone-700 transition-colors text-gray-600 dark:text-stone-400"
+              title={theme === 'light' ? 'Переключить на темную тему' : 'Переключить на светлую тему'}
+            >
+              {theme === 'light' ? <Moon className="w-5 h-5" /> : <Sun className="w-5 h-5" />}
+            </button>
+
             <form onSubmit={handleSearch} className="hidden sm:block">
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 dark:text-stone-500" />

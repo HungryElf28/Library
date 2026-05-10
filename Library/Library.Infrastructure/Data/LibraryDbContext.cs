@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using Library.Infrastructure.Data.Models;
 using Microsoft.EntityFrameworkCore;
@@ -137,15 +137,20 @@ public partial class LibraryDbContext : DbContext
 
         modelBuilder.Entity<Bookmark>(entity =>
         {
-            entity.HasKey(e => new { e.UserId, e.BookId }).HasName("Bookmarks_pkey");
+            entity.HasKey(e => e.Id).HasName("Bookmarks_pkey");
 
+            entity.Property(e => e.Id).HasColumnName("id");
             entity.Property(e => e.UserId).HasColumnName("user_id");
             entity.Property(e => e.BookId).HasColumnName("book_id");
             entity.Property(e => e.Page).HasColumnName("page");
+            entity.Property(e => e.Note).HasColumnName("note");
+            entity.Property(e => e.CreatedAt)
+                .HasColumnName("created_at")
+                .HasDefaultValueSql("CURRENT_TIMESTAMP");
 
             entity.HasOne(d => d.Book).WithMany(p => p.Bookmarks)
                 .HasForeignKey(d => d.BookId)
-                .OnDelete(DeleteBehavior.ClientSetNull)
+                .OnDelete(DeleteBehavior.Cascade)
                 .HasConstraintName("Bookmarks_book_id_fkey");
 
             entity.HasOne(d => d.User).WithMany(p => p.Bookmarks)
@@ -175,11 +180,11 @@ public partial class LibraryDbContext : DbContext
                     "CollectionBook",
                     r => r.HasOne<Book>().WithMany()
                         .HasForeignKey("BookId")
-                        .OnDelete(DeleteBehavior.ClientSetNull)
+                        .OnDelete(DeleteBehavior.Cascade)
                         .HasConstraintName("collection_book_book_id_fkey"),
                     l => l.HasOne<Collection>().WithMany()
                         .HasForeignKey("CollectionId")
-                        .OnDelete(DeleteBehavior.ClientSetNull)
+                        .OnDelete(DeleteBehavior.Cascade)
                         .HasConstraintName("collection_book_collection_id_fkey"),
                     j =>
                     {
@@ -209,12 +214,15 @@ public partial class LibraryDbContext : DbContext
 
             entity.Property(e => e.UserId).HasColumnName("user_id");
             entity.Property(e => e.BookId).HasColumnName("book_id");
-            entity.Property(e => e.LastOpened).HasColumnName("last_opened");
+            entity.Property(e => e.LastOpened)
+                .HasColumnName("last_opened")
+                .HasDefaultValueSql("CURRENT_TIMESTAMP");
             entity.Property(e => e.Page).HasColumnName("page");
+            entity.Property(e => e.TotalPages).HasColumnName("total_pages");
 
             entity.HasOne(d => d.Book).WithMany(p => p.ReadingBooks)
                 .HasForeignKey(d => d.BookId)
-                .OnDelete(DeleteBehavior.ClientSetNull)
+                .OnDelete(DeleteBehavior.Cascade)
                 .HasConstraintName("reading_book_book_id_fkey");
 
             entity.HasOne(d => d.User).WithMany(p => p.ReadingBooks)
@@ -238,7 +246,7 @@ public partial class LibraryDbContext : DbContext
 
             entity.HasOne(d => d.Book).WithMany(p => p.Reviews)
                 .HasForeignKey(d => d.BookId)
-                .OnDelete(DeleteBehavior.ClientSetNull)
+                .OnDelete(DeleteBehavior.Cascade)
                 .HasConstraintName("Reviews_book_id_fkey");
 
             entity.HasOne(d => d.User).WithMany(p => p.Reviews)
@@ -301,10 +309,18 @@ public partial class LibraryDbContext : DbContext
                 .HasColumnName("password_hash");
             entity.Property(e => e.RoleId).HasColumnName("role_id");
             entity.Property(e => e.IsSubscribed)
-                .HasColumnName("IsSubscribed")
+                .HasColumnName("is_subscribed")
                 .HasDefaultValue(false);
             entity.Property(e => e.SubscriptionExpiresAt)
-                .HasColumnName("SubscriptionExpiresAt");
+                .HasColumnName("subscription_expires_at");
+
+            entity.HasIndex(e => e.Login)
+                .IsUnique()
+                .HasDatabaseName("UX_Users_Login");
+
+            entity.HasIndex(e => e.Email)
+                .IsUnique()
+                .HasDatabaseName("UX_Users_Email");
 
             entity.HasOne(d => d.Role).WithMany(p => p.Users)
                 .HasForeignKey(d => d.RoleId)

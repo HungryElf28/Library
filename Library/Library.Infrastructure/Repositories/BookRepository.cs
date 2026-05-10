@@ -1,4 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using Library.Domain.Entities;
 using Library.Domain.Interfaces;
 using Library.Infrastructure.Data;
@@ -24,6 +24,7 @@ public class BookRepository : IBookRepository
             .Include(b => b.Authors)
             .Include(b => b.Genres)
             .Include(b => b.Tags)
+            .Include(b => b.Reviews)
             .ToListAsync();
 
         return efBooks.Select(BookMapper.ToDomain).ToList();
@@ -35,6 +36,7 @@ public class BookRepository : IBookRepository
             .Include(b => b.Authors)
             .Include(b => b.Genres)
             .Include(b => b.Tags)
+            .Include(b => b.Reviews)
             .FirstOrDefaultAsync(b => b.Id == id);
 
         return efBook == null ? null : BookMapper.ToDomain(efBook);
@@ -183,6 +185,7 @@ public class BookRepository : IBookRepository
         .Include(b => b.Authors)
         .Include(b => b.Genres)
         .Include(b => b.Tags)
+        .Include(b => b.Reviews)
         .AsQueryable();
 
     if (!string.IsNullOrWhiteSpace(searchTerm))

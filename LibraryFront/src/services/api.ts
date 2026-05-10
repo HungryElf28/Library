@@ -25,18 +25,11 @@ import {
   Collection,
   Bookmark,
 } from '../types';
-import { mockAuthors, mockGenres, mockTags, mockBooks, mockUsers } from './mockData';
 import { API_BASE } from '../config';
 
-// Use mock data mode - set to false when backend is available
-const USE_MOCK_DATA = false; // Updated auth endpoints to /api/auth/*
-
 const STORAGE_KEY = 'library_auth_token';
-const FAVORITES_KEY = 'library_favorites';
-const BOOKMARKS_KEY = 'library_bookmarks';
 const READING_PROGRESS_KEY = 'library_reading_progress';
-
-const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+const BOOKMARKS_KEY = 'library_bookmarks';
 
 let currentUser: User | null = null;
 let authToken: string | null = localStorage.getItem(STORAGE_KEY);
@@ -314,12 +307,17 @@ export const api = {
       return response.json();
     },
 
-    async create(bookId: number, data: CreateReviewDto): Promise<Review> {
-      const response = await fetchWithAuth(`${API_BASE}/api/Reviews/${bookId}`, {
+    async create(bookId: number, data: CreateReviewDto): Promise<void> {
+      await fetchWithAuth(`${API_BASE}/api/Reviews/${bookId}`, {
         method: 'POST',
         body: JSON.stringify(data),
       });
-      return response.json();
+    },
+
+    async delete(id: number): Promise<void> {
+      await fetchWithAuth(`${API_BASE}/api/Reviews/${id}`, {
+        method: 'DELETE',
+      });
     },
   },
 
@@ -356,11 +354,18 @@ export const api = {
       return response.json();
     },
 
-    async saveProgress(bookId: number, page: number): Promise<void> {
+    async saveProgress(bookId: number, page: number, totalPages: number): Promise<void> {
       await fetchWithAuth(`${API_BASE}/api/Users/reading/${bookId}`, {
         method: 'POST',
-        body: JSON.stringify(page),
+        body: JSON.stringify({ page, totalPages }),
       });
+    },
+
+    async getProgress(bookId: number): Promise<ReadingBook> {
+      const response = await fetchWithAuth(`${API_BASE}/api/Users/reading/${bookId}`, {
+        method: 'GET',
+      });
+      return response.json();
     },
 
     async updateSubscription(isSubscribed: boolean): Promise<void> {
@@ -394,7 +399,7 @@ export const api = {
     },
 
     async updateReadingProgress(bookId: number, page: number, totalPages: number): Promise<void> {
-      await api.users.saveProgress(bookId, page);
+      await api.users.saveProgress(bookId, page, totalPages);
 
       const progress = JSON.parse(localStorage.getItem(READING_PROGRESS_KEY) || '{}');
       progress[bookId] = {
@@ -461,38 +466,31 @@ export const api = {
 
   bookmarks: {
     async getByBookId(bookId: number): Promise<Bookmark[]> {
-      // This endpoint doesn't exist in the API, using localStorage as fallback
-      const bookmarks = JSON.parse(localStorage.getItem(BOOKMARKS_KEY) || '{}');
-      return bookmarks[bookId] || [];
+      const response = await fetchWithAuth(`${API_BASE}/api/Bookmarks/${bookId}`, {
+        method: 'GET',
+      });
+      return response.json();
     },
 
     async create(bookId: number, page: number, note?: string): Promise<Bookmark> {
-      // This endpoint doesn't exist in the API, using localStorage as fallback
-      const bookmarks = JSON.parse(localStorage.getItem(BOOKMARKS_KEY) || '{}');
-      if (!bookmarks[bookId]) {
-        bookmarks[bookId] = [];
-      }
+      const response = await fetchWithAuth(`${API_BASE}/api/Bookmarks/${bookId}`, {
+        method: 'POST',
+        body: JSON.stringify({ page, note }),
+      });
+      return response.json();
+    },
 
-      const bookmark: Bookmark = {
-        id: Date.now(),
-        bookId,
-        page,
-        note,
-        createdAt: new Date().toISOString(),
-      };
-
-      bookmarks[bookId].push(bookmark);
-      localStorage.setItem(BOOKMARKS_KEY, JSON.stringify(bookmarks));
-      return bookmark;
+    async update(bookmarkId: number, note?: string): Promise<void> {
+      await fetchWithAuth(`${API_BASE}/api/Bookmarks/${bookmarkId}`, {
+        method: 'PUT',
+        body: JSON.stringify(note),
+      });
     },
 
     async delete(bookId: number, bookmarkId: number): Promise<void> {
-      // This endpoint doesn't exist in the API, using localStorage as fallback
-      const bookmarks = JSON.parse(localStorage.getItem(BOOKMARKS_KEY) || '{}');
-      if (bookmarks[bookId]) {
-        bookmarks[bookId] = bookmarks[bookId].filter((b: Bookmark) => b.id !== bookmarkId);
-        localStorage.setItem(BOOKMARKS_KEY, JSON.stringify(bookmarks));
-      }
+      await fetchWithAuth(`${API_BASE}/api/Bookmarks/${bookmarkId}`, {
+        method: 'DELETE',
+      });
     },
   },
 

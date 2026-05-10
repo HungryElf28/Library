@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -15,17 +15,21 @@ namespace Library.Domain.Entities
         public string TextFile { get; private set; }
         public string? CoverFile { get; private set; }
         public string? Description { get; private set; }
+        public double AverageRating { get; private set; }
+        public int ReviewsCount { get; private set; }
         public List<Author> Authors { get; private set; } = new();
         public List<Genre> Genres { get; private set; } = new();
         public List<Tag> Tags { get; private set; } = new();
 
-        public Book(int id, string title, string textFile, string? coverFile, string? description)
+        public Book(int id, string title, string textFile, string? coverFile, string? description, double averageRating = 0, int reviewsCount = 0)
         {
             Id = id;
             Title = title;
             TextFile = textFile;
             CoverFile = coverFile;
             Description = description;
+            AverageRating = averageRating;
+            ReviewsCount = reviewsCount;
         }
 
         public void AddAuthor(Author author)

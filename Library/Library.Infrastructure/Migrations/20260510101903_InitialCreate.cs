@@ -1,7 +1,10 @@
 ﻿using System;
 using Microsoft.EntityFrameworkCore.Migrations;
+using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
 #nullable disable
+
+#pragma warning disable CA1814 // Prefer jagged arrays over multidimensional
 
 namespace Library.Infrastructure.Migrations
 {
@@ -15,7 +18,8 @@ namespace Library.Infrastructure.Migrations
                 name: "Authors",
                 columns: table => new
                 {
-                    id = table.Column<int>(type: "integer", nullable: false),
+                    id = table.Column<int>(type: "integer", nullable: false)
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
                     name = table.Column<string>(type: "character varying", nullable: false),
                     bio = table.Column<string>(type: "character varying", nullable: true),
                     photo = table.Column<string>(type: "character varying", nullable: true)
@@ -29,7 +33,8 @@ namespace Library.Infrastructure.Migrations
                 name: "Books",
                 columns: table => new
                 {
-                    id = table.Column<int>(type: "integer", nullable: false),
+                    id = table.Column<int>(type: "integer", nullable: false)
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
                     title = table.Column<string>(type: "character varying", nullable: false),
                     text_file = table.Column<string>(type: "character varying", nullable: false),
                     cover_file = table.Column<string>(type: "character varying", nullable: true),
@@ -45,7 +50,8 @@ namespace Library.Infrastructure.Migrations
                 name: "Genres",
                 columns: table => new
                 {
-                    id = table.Column<int>(type: "integer", nullable: false),
+                    id = table.Column<int>(type: "integer", nullable: false)
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
                     name = table.Column<string>(type: "character varying", nullable: false)
                 },
                 constraints: table =>
@@ -57,7 +63,8 @@ namespace Library.Infrastructure.Migrations
                 name: "Roles",
                 columns: table => new
                 {
-                    id = table.Column<int>(type: "integer", nullable: false),
+                    id = table.Column<int>(type: "integer", nullable: false)
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
                     role = table.Column<string>(type: "character varying", nullable: false)
                 },
                 constraints: table =>
@@ -69,7 +76,8 @@ namespace Library.Infrastructure.Migrations
                 name: "Tags",
                 columns: table => new
                 {
-                    id = table.Column<int>(type: "integer", nullable: false),
+                    id = table.Column<int>(type: "integer", nullable: false)
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
                     tag = table.Column<string>(type: "character varying", nullable: false)
                 },
                 constraints: table =>
@@ -125,13 +133,16 @@ namespace Library.Infrastructure.Migrations
                 name: "Users",
                 columns: table => new
                 {
-                    id = table.Column<int>(type: "integer", nullable: false),
+                    id = table.Column<int>(type: "integer", nullable: false)
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
                     login = table.Column<string>(type: "character varying", nullable: false),
                     password_hash = table.Column<string>(type: "character varying", nullable: false),
                     email = table.Column<string>(type: "character varying", nullable: false),
                     normalized_email = table.Column<string>(type: "character varying", nullable: false),
                     normalized_login = table.Column<string>(type: "character varying", nullable: false),
-                    role_id = table.Column<int>(type: "integer", nullable: false)
+                    role_id = table.Column<int>(type: "integer", nullable: false),
+                    is_subscribed = table.Column<bool>(type: "boolean", nullable: false, defaultValue: false),
+                    subscription_expires_at = table.Column<DateTime>(type: "timestamp with time zone", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -169,13 +180,17 @@ namespace Library.Infrastructure.Migrations
                 name: "Bookmarks",
                 columns: table => new
                 {
+                    id = table.Column<int>(type: "integer", nullable: false)
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
                     user_id = table.Column<int>(type: "integer", nullable: false),
                     book_id = table.Column<int>(type: "integer", nullable: false),
-                    page = table.Column<int>(type: "integer", nullable: false)
+                    page = table.Column<int>(type: "integer", nullable: false),
+                    note = table.Column<string>(type: "text", nullable: true),
+                    created_at = table.Column<DateTime>(type: "timestamp with time zone", nullable: false, defaultValueSql: "CURRENT_TIMESTAMP")
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("Bookmarks_pkey", x => new { x.user_id, x.book_id });
+                    table.PrimaryKey("Bookmarks_pkey", x => x.id);
                     table.ForeignKey(
                         name: "Bookmarks_book_id_fkey",
                         column: x => x.book_id,
@@ -192,7 +207,8 @@ namespace Library.Infrastructure.Migrations
                 name: "Collections",
                 columns: table => new
                 {
-                    id = table.Column<int>(type: "integer", nullable: false),
+                    id = table.Column<int>(type: "integer", nullable: false)
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
                     title = table.Column<string>(type: "character varying", nullable: false),
                     user_id = table.Column<int>(type: "integer", nullable: false)
                 },
@@ -256,7 +272,8 @@ namespace Library.Infrastructure.Migrations
                 name: "Reviews",
                 columns: table => new
                 {
-                    id = table.Column<int>(type: "integer", nullable: false),
+                    id = table.Column<int>(type: "integer", nullable: false)
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
                     rate = table.Column<int>(type: "integer", nullable: false),
                     review_text = table.Column<string>(type: "character varying", nullable: true),
                     user_id = table.Column<int>(type: "integer", nullable: false),
@@ -299,6 +316,15 @@ namespace Library.Infrastructure.Migrations
                         principalColumn: "id");
                 });
 
+            migrationBuilder.InsertData(
+                table: "Roles",
+                columns: new[] { "id", "role" },
+                values: new object[,]
+                {
+                    { 1, "Admin" },
+                    { 2, "User" }
+                });
+
             migrationBuilder.CreateIndex(
                 name: "IX_book_author_author_id",
                 table: "book_author",
@@ -318,6 +344,11 @@ namespace Library.Infrastructure.Migrations
                 name: "IX_Bookmarks_book_id",
                 table: "Bookmarks",
                 column: "book_id");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Bookmarks_user_id",
+                table: "Bookmarks",
+                column: "user_id");
 
             migrationBuilder.CreateIndex(
                 name: "IX_collection_book_book_id",
@@ -345,14 +376,27 @@ namespace Library.Infrastructure.Migrations
                 column: "book_id");
 
             migrationBuilder.CreateIndex(
-                name: "IX_Reviews_user_id",
+                name: "UX_Reviews_User_Book",
                 table: "Reviews",
-                column: "user_id");
+                columns: new[] { "user_id", "book_id" },
+                unique: true);
 
             migrationBuilder.CreateIndex(
                 name: "IX_Users_role_id",
                 table: "Users",
                 column: "role_id");
+
+            migrationBuilder.CreateIndex(
+                name: "UX_Users_Email",
+                table: "Users",
+                column: "email",
+                unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "UX_Users_Login",
+                table: "Users",
+                column: "login",
+                unique: true);
         }
 
         /// <inheritdoc />

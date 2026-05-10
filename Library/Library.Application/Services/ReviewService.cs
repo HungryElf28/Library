@@ -28,5 +28,15 @@ namespace Library.Application.Services
         {
             return await _repo.GetByBookIdAsync(bookId);
         }
+
+        public async Task<Review?> GetById(int id)
+        {
+            return await _repo.GetByIdAsync(id);
+        }
+
+        public async Task Delete(int id)
+        {
+            await _repo.DeleteAsync(id);
+        }
     }
 }

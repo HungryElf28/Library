@@ -123,6 +123,7 @@ function AppContent() {
             bookId={currentPage.bookId}
             onStartReading={(bookId) => navigate('reader', { bookId })}
             onBack={() => navigate('catalog')}
+            onNavigateToLogin={() => navigate('login')}
           />
         )}
 

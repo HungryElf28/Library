@@ -14,5 +14,9 @@ namespace Library.Domain.Interfaces
         Task<List<Review>> GetByBookIdAsync(int bookId);
 
         Task<double> GetAverageRatingAsync(int bookId);
+
+        Task<Review?> GetByIdAsync(int id);
+
+        Task DeleteAsync(int id);
     }
 }

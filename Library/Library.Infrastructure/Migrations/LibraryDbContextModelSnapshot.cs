@@ -178,22 +178,41 @@ namespace Library.Infrastructure.Migrations
 
             modelBuilder.Entity("Library.Infrastructure.Data.Models.Bookmark", b =>
                 {
-                    b.Property<int>("UserId")
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
                         .HasColumnType("integer")
-                        .HasColumnName("user_id");
+                        .HasColumnName("id");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
                     b.Property<int>("BookId")
                         .HasColumnType("integer")
                         .HasColumnName("book_id");
 
+                    b.Property<DateTime>("CreatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at")
+                        .HasDefaultValueSql("CURRENT_TIMESTAMP");
+
+                    b.Property<string>("Note")
+                        .HasColumnType("text")
+                        .HasColumnName("note");
+
                     b.Property<int>("Page")
                         .HasColumnType("integer")
                         .HasColumnName("page");
 
-                    b.HasKey("UserId", "BookId")
+                    b.Property<int>("UserId")
+                        .HasColumnType("integer")
+                        .HasColumnName("user_id");
+
+                    b.HasKey("Id")
                         .HasName("Bookmarks_pkey");
 
                     b.HasIndex("BookId");
+
+                    b.HasIndex("UserId");
 
                     b.ToTable("Bookmarks");
                 });
@@ -254,13 +273,19 @@ namespace Library.Infrastructure.Migrations
                         .HasColumnType("integer")
                         .HasColumnName("book_id");
 
-                    b.Property<DateOnly>("LastOpened")
-                        .HasColumnType("date")
-                        .HasColumnName("last_opened");
+                    b.Property<DateTime>("LastOpened")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("last_opened")
+                        .HasDefaultValueSql("CURRENT_TIMESTAMP");
 
                     b.Property<int>("Page")
                         .HasColumnType("integer")
                         .HasColumnName("page");
+
+                    b.Property<int>("TotalPages")
+                        .HasColumnType("integer")
+                        .HasColumnName("total_pages");
 
                     b.HasKey("UserId", "BookId")
                         .HasName("reading_book_pkey");
@@ -325,6 +350,18 @@ namespace Library.Infrastructure.Migrations
                         .HasName("Roles_pkey");
 
                     b.ToTable("Roles");
+
+                    b.HasData(
+                        new
+                        {
+                            Id = 1,
+                            Role1 = "Admin"
+                        },
+                        new
+                        {
+                            Id = 2,
+                            Role1 = "User"
+                        });
                 });
 
             modelBuilder.Entity("Library.Infrastructure.Data.Models.Tag", b =>
@@ -361,6 +398,12 @@ namespace Library.Infrastructure.Migrations
                         .HasColumnType("character varying")
                         .HasColumnName("email");
 
+                    b.Property<bool>("IsSubscribed")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(false)
+                        .HasColumnName("is_subscribed");
+
                     b.Property<string>("Login")
                         .IsRequired()
                         .HasColumnType("character varying")
@@ -385,8 +428,20 @@ namespace Library.Infrastructure.Migrations
                         .HasColumnType("integer")
                         .HasColumnName("role_id");
 
+                    b.Property<DateTime?>("SubscriptionExpiresAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("subscription_expires_at");
+
                     b.HasKey("Id")
                         .HasName("Users_pkey");
+
+                    b.HasIndex("Email")
+                        .IsUnique()
+                        .HasDatabaseName("UX_Users_Email");
+
+                    b.HasIndex("Login")
+                        .IsUnique()
+                        .HasDatabaseName("UX_Users_Login");
 
                     b.HasIndex("RoleId");
 
@@ -443,12 +498,14 @@ namespace Library.Infrastructure.Migrations
                     b.HasOne("Library.Infrastructure.Data.Models.Book", null)
                         .WithMany()
                         .HasForeignKey("BookId")
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired()
                         .HasConstraintName("collection_book_book_id_fkey");
 
                     b.HasOne("Library.Infrastructure.Data.Models.Collection", null)
                         .WithMany()
                         .HasForeignKey("CollectionId")
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired()
                         .HasConstraintName("collection_book_collection_id_fkey");
                 });
@@ -473,6 +530,7 @@ namespace Library.Infrastructure.Migrations
                     b.HasOne("Library.Infrastructure.Data.Models.Book", "Book")
                         .WithMany("Bookmarks")
                         .HasForeignKey("BookId")
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired()
                         .HasConstraintName("Bookmarks_book_id_fkey");
 
@@ -503,6 +561,7 @@ namespace Library.Infrastructure.Migrations
                     b.HasOne("Library.Infrastructure.Data.Models.Book", "Book")
                         .WithMany("ReadingBooks")
                         .HasForeignKey("BookId")
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired()
                         .HasConstraintName("reading_book_book_id_fkey");
 
@@ -522,6 +581,7 @@ namespace Library.Infrastructure.Migrations
                     b.HasOne("Library.Infrastructure.Data.Models.Book", "Book")
                         .WithMany("Reviews")
                         .HasForeignKey("BookId")
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired()
                         .HasConstraintName("Reviews_book_id_fkey");
 

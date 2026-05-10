@@ -12,8 +12,8 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Library.Infrastructure.Migrations
 {
     [DbContext(typeof(LibraryDbContext))]
-    [Migration("20260425184846_AddUniqueReviewIndex")]
-    partial class AddUniqueReviewIndex
+    [Migration("20260510101903_InitialCreate")]
+    partial class InitialCreate
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -118,8 +118,11 @@ namespace Library.Infrastructure.Migrations
             modelBuilder.Entity("Library.Infrastructure.Data.Models.Author", b =>
                 {
                     b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
                         .HasColumnType("integer")
                         .HasColumnName("id");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
                     b.Property<string>("Bio")
                         .HasColumnType("character varying")
@@ -143,8 +146,11 @@ namespace Library.Infrastructure.Migrations
             modelBuilder.Entity("Library.Infrastructure.Data.Models.Book", b =>
                 {
                     b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
                         .HasColumnType("integer")
                         .HasColumnName("id");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
                     b.Property<string>("CoverFile")
                         .HasColumnType("character varying")
@@ -175,22 +181,41 @@ namespace Library.Infrastructure.Migrations
 
             modelBuilder.Entity("Library.Infrastructure.Data.Models.Bookmark", b =>
                 {
-                    b.Property<int>("UserId")
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
                         .HasColumnType("integer")
-                        .HasColumnName("user_id");
+                        .HasColumnName("id");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
                     b.Property<int>("BookId")
                         .HasColumnType("integer")
                         .HasColumnName("book_id");
 
+                    b.Property<DateTime>("CreatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at")
+                        .HasDefaultValueSql("CURRENT_TIMESTAMP");
+
+                    b.Property<string>("Note")
+                        .HasColumnType("text")
+                        .HasColumnName("note");
+
                     b.Property<int>("Page")
                         .HasColumnType("integer")
                         .HasColumnName("page");
 
-                    b.HasKey("UserId", "BookId")
+                    b.Property<int>("UserId")
+                        .HasColumnType("integer")
+                        .HasColumnName("user_id");
+
+                    b.HasKey("Id")
                         .HasName("Bookmarks_pkey");
 
                     b.HasIndex("BookId");
+
+                    b.HasIndex("UserId");
 
                     b.ToTable("Bookmarks");
                 });
@@ -198,8 +223,11 @@ namespace Library.Infrastructure.Migrations
             modelBuilder.Entity("Library.Infrastructure.Data.Models.Collection", b =>
                 {
                     b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
                         .HasColumnType("integer")
                         .HasColumnName("id");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
                     b.Property<string>("Title")
                         .IsRequired()
@@ -221,8 +249,11 @@ namespace Library.Infrastructure.Migrations
             modelBuilder.Entity("Library.Infrastructure.Data.Models.Genre", b =>
                 {
                     b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
                         .HasColumnType("integer")
                         .HasColumnName("id");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
                     b.Property<string>("Name")
                         .IsRequired()
@@ -264,8 +295,11 @@ namespace Library.Infrastructure.Migrations
             modelBuilder.Entity("Library.Infrastructure.Data.Models.Review", b =>
                 {
                     b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
                         .HasColumnType("integer")
                         .HasColumnName("id");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
                     b.Property<int>("BookId")
                         .HasColumnType("integer")
@@ -298,8 +332,11 @@ namespace Library.Infrastructure.Migrations
             modelBuilder.Entity("Library.Infrastructure.Data.Models.Role", b =>
                 {
                     b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
                         .HasColumnType("integer")
                         .HasColumnName("id");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
                     b.Property<string>("Role1")
                         .IsRequired()
@@ -310,13 +347,28 @@ namespace Library.Infrastructure.Migrations
                         .HasName("Roles_pkey");
 
                     b.ToTable("Roles");
+
+                    b.HasData(
+                        new
+                        {
+                            Id = 1,
+                            Role1 = "Admin"
+                        },
+                        new
+                        {
+                            Id = 2,
+                            Role1 = "User"
+                        });
                 });
 
             modelBuilder.Entity("Library.Infrastructure.Data.Models.Tag", b =>
                 {
                     b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
                         .HasColumnType("integer")
                         .HasColumnName("id");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
                     b.Property<string>("Name")
                         .IsRequired()
@@ -332,13 +384,22 @@ namespace Library.Infrastructure.Migrations
             modelBuilder.Entity("Library.Infrastructure.Data.Models.User", b =>
                 {
                     b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
                         .HasColumnType("integer")
                         .HasColumnName("id");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
                     b.Property<string>("Email")
                         .IsRequired()
                         .HasColumnType("character varying")
                         .HasColumnName("email");
+
+                    b.Property<bool>("IsSubscribed")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(false)
+                        .HasColumnName("is_subscribed");
 
                     b.Property<string>("Login")
                         .IsRequired()
@@ -364,8 +425,20 @@ namespace Library.Infrastructure.Migrations
                         .HasColumnType("integer")
                         .HasColumnName("role_id");
 
+                    b.Property<DateTime?>("SubscriptionExpiresAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("subscription_expires_at");
+
                     b.HasKey("Id")
                         .HasName("Users_pkey");
+
+                    b.HasIndex("Email")
+                        .IsUnique()
+                        .HasDatabaseName("UX_Users_Email");
+
+                    b.HasIndex("Login")
+                        .IsUnique()
+                        .HasDatabaseName("UX_Users_Login");
 
                     b.HasIndex("RoleId");
 

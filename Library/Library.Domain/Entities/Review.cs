@@ -10,12 +10,13 @@ namespace Library.Domain.Entities
     {
         public int Id { get; }
         public int UserId { get; }
+        public string? UserName { get; }
         public int BookId { get; }
 
         public int Rate { get; }
         public string? Text { get; }
 
-        public Review(int id, int userId, int bookId, int rate, string? text)
+        public Review(int id, int userId, int bookId, int rate, string? text, string? userName = null)
         {
             if (rate < 0 || rate > 5)
                 throw new ArgumentException("Rate must be 0-5");
@@ -25,6 +26,7 @@ namespace Library.Domain.Entities
             BookId = bookId;
             Rate = rate;
             Text = text;
+            UserName = userName;
         }
     }
 }

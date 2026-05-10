@@ -67,13 +67,15 @@ namespace Library.Infrastructure.Repositories
         public async Task<List<Review>> GetByBookIdAsync(int bookId)
         {
             return await _context.Reviews
+                .Include(r => r.User)
                 .Where(r => r.BookId == bookId)
                 .Select(r => new Review(
                     r.Id,
                     r.UserId,
                     r.BookId,
                     r.Rate,
-                    r.ReviewText
+                    r.ReviewText,
+                    r.User.Login
                 ))
                 .ToListAsync();
         }
@@ -83,6 +85,36 @@ namespace Library.Infrastructure.Repositories
             return await _context.Reviews
                 .Where(r => r.BookId == bookId)
                 .AverageAsync(r => (double?)r.Rate) ?? 0;
+        }
+
+        public async Task<Review?> GetByIdAsync(int id)
+        {
+            var r = await _context.Reviews
+                .Include(r => r.User)
+                .FirstOrDefaultAsync(x => x.Id == id);
+
+            if (r == null) return null;
+
+            return new Review(
+                r.Id,
+                r.UserId,
+                r.BookId,
+                r.Rate,
+                r.ReviewText,
+                r.User.Login
+            );
+        }
+
+        public async Task DeleteAsync(int id)
+        {
+            var r = await _context.Reviews.FindAsync(id);
+            if (r != null)
+            {
+                var bookId = r.BookId;
+                _context.Reviews.Remove(r);
+                await _context.SaveChangesAsync();
+                await UpdateBookRating(bookId);
+            }
         }
     }
 }

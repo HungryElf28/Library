@@ -11,7 +11,9 @@ public partial class ReadingBook
 
     public int Page { get; set; }
 
-    public DateOnly LastOpened { get; set; }
+    public int TotalPages { get; set; }
+
+    public DateTime LastOpened { get; set; } = DateTime.UtcNow;
 
     public virtual Book Book { get; set; } = null!;
 

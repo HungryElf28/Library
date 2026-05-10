@@ -21,7 +21,9 @@ public static class BookMapper
             ef.Title,
             ef.TextFile,
             ef.CoverFile,
-            ef.Description
+            ef.Description,
+            ef.Rating,
+            ef.Reviews.Count
         );
 
         book.Authors.AddRange(

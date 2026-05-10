@@ -55,12 +55,32 @@ namespace Library.Web.Controllers
                 {
                     r.Id,
                     r.UserId,
+                    userName = r.UserName,
                     r.BookId,
                     r.Rate,
-                    r.Text
+                    text = r.Text
                 });
 
             return Ok(PagedResponseDto<object>.Create(items, total, page, pageSize));
+        }
+
+        [Authorize]
+        [HttpDelete("{id}")]
+        public async Task<IActionResult> Delete(int id)
+        {
+            var review = await _service.GetById(id);
+            if (review == null) return NotFound();
+
+            var currentUserId = User.GetUserId();
+            var isAdmin = User.IsAdmin();
+
+            if (!isAdmin && review.UserId != currentUserId)
+            {
+                return Forbid();
+            }
+
+            await _service.Delete(id);
+            return Ok();
         }
     }
 }

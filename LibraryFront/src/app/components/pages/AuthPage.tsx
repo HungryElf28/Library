@@ -62,15 +62,22 @@ export function AuthPage({ onSuccess }: AuthPageProps) {
         password: registerForm.password,
       });
       onSuccess();
-    } catch (err) {
-      setError('Пользователь с таким логином уже существует');
+    } catch (err: any) {
+      const message = err.message || '';
+      if (message.includes('login already exists')) {
+        setError('Пользователь с таким логином уже существует');
+      } else if (message.includes('email already exists')) {
+        setError('Пользователь с такой почтой уже зарегистрирован');
+      } else {
+        setError(message || 'Ошибка при регистрации');
+      }
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-amber-50 to-orange-100 dark:from-stone-900 dark:to-stone-800 px-4">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-amber-50 to-orange-100 dark:from-stone-900 dark:to-stone-800 px-4 relative">
       <div className="max-w-md w-full">
         <div className="text-center mb-8">
           <div className="flex items-center justify-center gap-3 mb-4">

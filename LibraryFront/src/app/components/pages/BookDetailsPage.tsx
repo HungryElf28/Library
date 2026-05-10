@@ -1,17 +1,19 @@
 import React, { useState, useEffect } from 'react';
 import { Book, Review, CreateReviewDto, Collection } from '../../../types';
 import { api } from '../../../services/api';
-import { Star, Heart, BookOpen, Loader, ArrowLeft, Edit, ListPlus, X } from 'lucide-react';
+import { Star, Heart, BookOpen, Loader, ArrowLeft, Edit, ListPlus, X, Trash2 } from 'lucide-react';
 import { useAuth } from '../../../contexts/AuthContext';
 import { BookEditModal } from '../BookEditModal';
+import { API_BASE } from '../../../config';
 
 interface BookDetailsPageProps {
   bookId: number;
   onStartReading: (bookId: number) => void;
   onBack: () => void;
+  onNavigateToLogin?: () => void;
 }
 
-export function BookDetailsPage({ bookId, onStartReading, onBack }: BookDetailsPageProps) {
+export function BookDetailsPage({ bookId, onStartReading, onBack, onNavigateToLogin }: BookDetailsPageProps) {
   const { user } = useAuth();
   const [book, setBook] = useState<Book | null>(null);
   const [reviews, setReviews] = useState<Review[]>([]);
@@ -40,6 +42,10 @@ export function BookDetailsPage({ bookId, onStartReading, onBack }: BookDetailsP
       setLoading(false);
     }
   };
+
+  const coverUrl = book?.coverFile 
+    ? (book.coverFile.startsWith('http') ? book.coverFile : `${API_BASE}${book.coverFile.startsWith('/') ? '' : '/'}${book.coverFile}`)
+    : null;
 
   const loadReviews = async () => {
     try {
@@ -77,6 +83,20 @@ export function BookDetailsPage({ bookId, onStartReading, onBack }: BookDetailsP
     }
   };
 
+  const existingUserReview = reviews.find(r => r.userId === user?.id);
+
+  const handleEditReview = () => {
+    if (existingUserReview) {
+      setUserReview({ rate: existingUserReview.rate, text: existingUserReview.text || '' });
+      setShowReviewForm(true);
+      // Scroll to form
+      setTimeout(() => {
+          const form = document.getElementById('review-form');
+          form?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }, 100);
+    }
+  };
+
   const handleSubmitReview = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!user || user.role === 'guest') return;
@@ -84,11 +104,24 @@ export function BookDetailsPage({ bookId, onStartReading, onBack }: BookDetailsP
     try {
       await api.reviews.create(bookId, userReview);
       setShowReviewForm(false);
-      setUserReview({ rate: 5, text: '' });
       await loadReviews();
       await loadBook();
     } catch (error) {
       console.error('Error submitting review:', error);
+      alert('Ошибка при сохранении отзыва');
+    }
+  };
+
+  const handleReviewDelete = async (reviewId: number) => {
+    if (!confirm('Вы уверены, что хотите удалить этот отзыв?')) return;
+
+    try {
+      await api.reviews.delete(reviewId);
+      await loadReviews();
+      await loadBook();
+    } catch (error) {
+      console.error('Error deleting review:', error);
+      alert('Ошибка при удалении отзыва');
     }
   };
 
@@ -116,6 +149,35 @@ export function BookDetailsPage({ bookId, onStartReading, onBack }: BookDetailsP
     }
   };
 
+  const handleStartReading = () => {
+    if (!user || user.role === 'guest') {
+      if (confirm('Для чтения книг необходимо войти в аккаунт. Перейти на страницу входа?')) {
+        if (onNavigateToLogin) {
+          onNavigateToLogin();
+        }
+      }
+      return;
+    }
+    onStartReading(bookId);
+  };
+
+  const renderRatingStars = (rating: number) => {
+    return (
+      <div className="flex gap-1">
+        {[1, 2, 3, 4, 5].map((star) => (
+          <Star
+            key={star}
+            className={`w-5 h-5 ${
+              star <= Math.round(rating)
+                ? 'fill-yellow-400 text-yellow-400'
+                : 'text-gray-300 dark:text-stone-600'
+            }`}
+          />
+        ))}
+      </div>
+    );
+  };
+
   if (loading || !book) {
     return (
       <div className="flex items-center justify-center py-20">
@@ -124,14 +186,12 @@ export function BookDetailsPage({ bookId, onStartReading, onBack }: BookDetailsP
     );
   }
 
-  const existingUserReview = reviews.find(r => r.userId === user?.id);
-
   return (
     <div>
       <div className="flex items-center justify-between mb-6">
         <button
           onClick={onBack}
-          className="flex items-center gap-2 text-gray-600 hover:text-gray-900"
+          className="flex items-center gap-2 text-gray-600 hover:text-gray-900 dark:text-stone-400 dark:hover:text-stone-100 transition-colors"
         >
           <ArrowLeft className="w-5 h-5" />
           Назад к каталогу
@@ -152,9 +212,9 @@ export function BookDetailsPage({ bookId, onStartReading, onBack }: BookDetailsP
         <div className="grid md:grid-cols-3 gap-8 p-6 md:p-8">
           <div className="md:col-span-1">
             <div className="sticky top-20">
-              {book.coverFile ? (
+              {coverUrl ? (
                 <img
-                  src={book.coverFile}
+                  src={coverUrl}
                   alt={book.title}
                   className="w-full rounded-lg shadow-md"
                 />
@@ -166,11 +226,11 @@ export function BookDetailsPage({ bookId, onStartReading, onBack }: BookDetailsP
 
               <div className="mt-6 space-y-3">
                 <button
-                  onClick={() => onStartReading(bookId)}
-                  className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-amber-600 text-white rounded-lg font-medium hover:bg-amber-700 transition-colors"
+                  onClick={handleStartReading}
+                  className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-amber-600 text-white rounded-lg font-medium hover:bg-amber-700 transition-colors shadow-lg shadow-amber-600/20 active:scale-95"
                 >
                   <BookOpen className="w-5 h-5" />
-                  Читать
+                  {(!user || user.role === 'guest') ? 'Войти и читать' : 'Читать'}
                 </button>
 
                 {user && user.role !== 'guest' && (
@@ -209,12 +269,15 @@ export function BookDetailsPage({ bookId, onStartReading, onBack }: BookDetailsP
                 {book.authors.map(a => a.name).join(', ')}
               </p>
 
-              {book.averageRating && (
-                <div className="flex items-center gap-4">
-                  <div className="flex items-center gap-2">
-                    <Star className="w-6 h-6 fill-yellow-400 text-yellow-400" />
-                    <span className="text-2xl font-bold text-gray-900 dark:text-stone-100">{book.averageRating.toFixed(1)}</span>
+              {(book.reviewsCount ?? 0) > 0 && (
+                <div className="flex items-center gap-6">
+                  <div className="flex items-center gap-3">
+                    {renderRatingStars(book.averageRating || 0)}
+                    <span className="text-2xl font-bold text-gray-900 dark:text-stone-100">
+                      {(book.averageRating || 0).toFixed(1)}
+                    </span>
                   </div>
+                  <div className="h-6 w-px bg-amber-200 dark:bg-stone-700" />
                   <span className="text-gray-600 dark:text-stone-400">
                     {book.reviewsCount} {book.reviewsCount === 1 ? 'отзыв' : 'отзывов'}
                   </span>
@@ -245,18 +308,30 @@ export function BookDetailsPage({ bookId, onStartReading, onBack }: BookDetailsP
             <div className="pt-6 border-t border-amber-200 dark:border-stone-700">
               <div className="flex items-center justify-between mb-4">
                 <h2 className="text-xl font-semibold text-gray-900 dark:text-stone-100">Отзывы</h2>
-                {user && user.role !== 'guest' && !existingUserReview && (
+                {user && user.role !== 'guest' && (
                   <button
-                    onClick={() => setShowReviewForm(!showReviewForm)}
-                    className="px-4 py-2 bg-amber-600 text-white rounded-lg text-sm font-medium hover:bg-amber-700"
+                    onClick={() => {
+                        if (showReviewForm) {
+                            setShowReviewForm(false);
+                        } else if (existingUserReview) {
+                            handleEditReview();
+                        } else {
+                            setUserReview({ rate: 5, text: '' });
+                            setShowReviewForm(true);
+                        }
+                    }}
+                    className="px-4 py-2 bg-amber-600 text-white rounded-lg text-sm font-medium hover:bg-amber-700 transition-all active:scale-95"
                   >
-                    {showReviewForm ? 'Отменить' : 'Написать отзыв'}
+                    {showReviewForm ? 'Отменить' : existingUserReview ? 'Редактировать отзыв' : 'Написать отзыв'}
                   </button>
                 )}
               </div>
 
               {showReviewForm && (
-                <form onSubmit={handleSubmitReview} className="mb-6 p-4 bg-amber-50/50 dark:bg-stone-800/50 rounded-lg">
+                <form id="review-form" onSubmit={handleSubmitReview} className="mb-6 p-6 bg-amber-50/50 dark:bg-stone-800/50 rounded-2xl border border-amber-200 dark:border-stone-700 shadow-sm transition-all animate-in fade-in slide-in-from-top-4">
+                  <h3 className="text-lg font-bold text-gray-900 dark:text-stone-100 mb-4">
+                      {existingUserReview ? 'Редактирование отзыва' : 'Ваш отзыв'}
+                  </h3>
                   <div className="mb-4">
                     <label className="block text-sm font-medium text-gray-700 dark:text-stone-300 mb-2">
                       Оценка
@@ -298,7 +373,7 @@ export function BookDetailsPage({ bookId, onStartReading, onBack }: BookDetailsP
                     type="submit"
                     className="px-4 py-2 bg-amber-600 text-white rounded-lg font-medium hover:bg-amber-700"
                   >
-                    Опубликовать
+                    {existingUserReview ? 'Сохранить изменения' : 'Опубликовать'}
                   </button>
                 </form>
               )}
@@ -307,31 +382,65 @@ export function BookDetailsPage({ bookId, onStartReading, onBack }: BookDetailsP
                 {reviews.length === 0 ? (
                   <p className="text-gray-600 dark:text-stone-400 text-center py-8">Пока нет отзывов</p>
                 ) : (
-                  reviews.map((review) => (
-                    <div key={review.id} className="p-4 bg-amber-50/50 dark:bg-stone-800/50 rounded-lg">
-                      <div className="flex items-start justify-between mb-2">
-                        <div>
-                          <p className="font-medium text-gray-900 dark:text-stone-100">{review.userName}</p>
-                          <div className="flex items-center gap-1 mt-1">
-                            {Array.from({ length: 5 }, (_, i) => (
-                              <Star
-                                key={i}
-                                className={`w-4 h-4 ${
-                                  i < review.rate
-                                    ? 'fill-yellow-400 text-yellow-400'
-                                    : 'text-gray-300'
-                                }`}
-                              />
-                            ))}
+                  reviews.map((review) => {
+                    const isOwnReview = review.userId === user?.id;
+                    return (
+                        <div key={review.id} className={`p-5 rounded-2xl border transition-all ${
+                            isOwnReview 
+                                ? 'bg-amber-50/80 dark:bg-amber-900/10 border-amber-200 dark:border-amber-800 shadow-sm' 
+                                : 'bg-gray-50 dark:bg-stone-900/40 border-transparent hover:border-amber-100 dark:hover:border-stone-800'
+                        }`}>
+                          <div className="flex items-start justify-between mb-3">
+                            <div>
+                              <div className="flex items-center gap-2">
+                                <p className="font-bold text-gray-900 dark:text-stone-100">{review.userName}</p>
+                                {isOwnReview && (
+                                    <span className="text-[10px] px-2 py-0.5 bg-amber-200 dark:bg-amber-800 text-amber-800 dark:text-amber-200 rounded-full font-bold uppercase tracking-wider">Вы</span>
+                                )}
+                              </div>
+                              <div className="flex items-center gap-1 mt-1">
+                                {Array.from({ length: 5 }, (_, i) => (
+                                  <Star
+                                    key={i}
+                                    className={`w-3.5 h-3.5 ${
+                                      i < review.rate
+                                        ? 'fill-yellow-400 text-yellow-400'
+                                        : 'text-gray-300 dark:text-stone-700'
+                                    }`}
+                                  />
+                                ))}
+                              </div>
+                            </div>
+                            <div className="flex items-center gap-3">
+                                <span className="text-xs text-gray-500 dark:text-stone-500">{review.createdAt}</span>
+                                {(isOwnReview || user?.role === 'admin') && (
+                                    <div className="flex gap-1">
+                                        {isOwnReview && !showReviewForm && (
+                                            <button 
+                                                onClick={handleEditReview}
+                                                className="p-1.5 text-amber-600 hover:bg-amber-100 dark:hover:bg-amber-900/30 rounded-lg transition-colors"
+                                                title="Редактировать"
+                                            >
+                                                <Edit className="w-4 h-4" />
+                                            </button>
+                                        )}
+                                        <button 
+                                            onClick={() => handleReviewDelete(review.id)}
+                                            className="p-1.5 text-red-600 hover:bg-red-100 dark:hover:bg-red-900/30 rounded-lg transition-colors"
+                                            title="Удалить"
+                                        >
+                                            <Trash2 className="w-4 h-4" />
+                                        </button>
+                                    </div>
+                                )}
+                            </div>
                           </div>
+                          {review.text && (
+                            <p className="text-gray-700 dark:text-stone-300 leading-relaxed text-sm">{review.text}</p>
+                          )}
                         </div>
-                        <span className="text-sm text-gray-500 dark:text-stone-500">{review.createdAt}</span>
-                      </div>
-                      {review.text && (
-                        <p className="text-gray-700 dark:text-stone-300 leading-relaxed">{review.text}</p>
-                      )}
-                    </div>
-                  ))
+                    );
+                  })
                 )}
               </div>
             </div>

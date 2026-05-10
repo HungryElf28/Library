@@ -56,8 +56,6 @@ namespace Library.Web.Controllers
             if (book == null)
                 return NotFound();
 
-            var avgRate = await _reviewRepo.GetAverageRatingAsync(id);
-
             var result = new BookDetailsDto
             {
                 Id = book.Id,
@@ -65,7 +63,8 @@ namespace Library.Web.Controllers
                 TextFile = book.TextFile,
                 CoverFile = book.CoverFile,
                 Description = book.Description,
-                AverageRate = avgRate,
+                AverageRating = book.AverageRating,
+                ReviewsCount = book.ReviewsCount,
                 Authors = book.Authors.Select(a => new AuthorDto { Id = a.Id, Name = a.Name }).ToList(),
                 Genres = book.Genres.Select(g => new GenreDto { Id = g.Id, Name = g.Name }).ToList(),
                 Tags = book.Tags.Select(t => new TagDto { Id = t.Id, Name = t.Name }).ToList()
@@ -181,7 +180,8 @@ namespace Library.Web.Controllers
                     b.Id,
                     b.Title,
                     b.CoverFile,
-                    Authors = b.Authors.Select(a => a.Name).ToList()
+                    Authors = b.Authors.Select(a => a.Name).ToList(),
+                    averageRating = b.AverageRating
                 }),
                 total,
                 page,
@@ -212,7 +212,7 @@ namespace Library.Web.Controllers
                 await file.CopyToAsync(stream);
             }
 
-            return $"{Request.Scheme}://{Request.Host}/uploads/{fileName}";
+            return $"/uploads/{fileName}";
         }
 
         private static Book BuildBook(

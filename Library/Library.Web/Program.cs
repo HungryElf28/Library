@@ -24,6 +24,7 @@ builder.Services.AddScoped<ITagRepository, TagRepository>();
 builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<IReviewRepository, ReviewRepository>();
 builder.Services.AddScoped<ICollectionRepository, CollectionRepository>();
+builder.Services.AddScoped<IBookmarkRepository, BookmarkRepository>();
 
 builder.Services.AddScoped<BookService>();
 builder.Services.AddScoped<GenreService>();
@@ -34,6 +35,7 @@ builder.Services.AddScoped<SearchService>();
 builder.Services.AddScoped<ReviewService>();
 builder.Services.AddScoped<CollectionService>();
 builder.Services.AddScoped<UserService>();
+builder.Services.AddScoped<BookmarkService>();
 
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
@@ -87,15 +89,10 @@ app.UseStaticFiles(new StaticFileOptions
     ContentTypeProvider = contentTypeProvider,
     OnPrepareResponse = context =>
     {
-        var origin = context.Context.Request.Headers.Origin.ToString();
-        if (origin == "http://localhost:3000"
-            || origin == "http://127.0.0.1:3000"
-            || origin == "http://localhost:5173"
-            || origin == "http://127.0.0.1:5173")
-        {
-            context.Context.Response.Headers.AccessControlAllowOrigin = origin;
-            context.Context.Response.Headers.Vary = "Origin";
-        }
+        context.Context.Response.Headers.Append("Access-Control-Allow-Origin", "*");
+        context.Context.Response.Headers.Append("Access-Control-Allow-Methods", "GET, OPTIONS");
+        context.Context.Response.Headers.Append("Access-Control-Allow-Headers", "Range, Content-Type");
+        context.Context.Response.Headers.Append("Access-Control-Expose-Headers", "Accept-Ranges, Content-Encoding, Content-Length, Content-Range");
     }
 });
 

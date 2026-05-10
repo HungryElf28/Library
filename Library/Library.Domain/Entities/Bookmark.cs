@@ -1,0 +1,28 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+
+namespace Library.Domain.Entities
+{
+    public class Bookmark
+    {
+        public int Id { get; }
+        public int UserId { get; }
+        public int BookId { get; }
+        public int Page { get; }
+        public string? Note { get; }
+        public DateTime CreatedAt { get; }
+
+        public Bookmark(int id, int userId, int bookId, int page, string? note, DateTime createdAt)
+        {
+            Id = id;
+            UserId = userId;
+            BookId = bookId;
+            Page = page;
+            Note = note;
+            CreatedAt = createdAt;
+        }
+    }
+}

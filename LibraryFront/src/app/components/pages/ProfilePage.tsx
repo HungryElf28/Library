@@ -2,8 +2,10 @@ import React, { useState, useEffect } from 'react';
 import { BookListItem, ReadingBook } from '../../../types';
 import { api } from '../../../services/api';
 import { BookCard } from '../BookCard';
-import { Heart, BookOpen, User, Loader, Clock } from 'lucide-react';
+import { Heart, BookOpen, User, LogOut, Clock, Loader } from 'lucide-react';
 import { useAuth } from '../../../contexts/AuthContext';
+import { API_BASE } from '../../../config';
+
 
 interface ProfilePageProps {
   onBookClick: (bookId: number) => void;
@@ -55,9 +57,9 @@ export function ProfilePage({ onBookClick, initialTab = 'favorites' }: ProfilePa
             <User className="w-8 h-8 text-white" />
           </div>
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">{user?.login}</h1>
-            <p className="text-gray-600">{user?.email}</p>
-            <p className="text-sm text-gray-500 mt-1">
+            <h1 className="text-2xl font-bold text-gray-900 dark:text-stone-100">{user?.login}</h1>
+            <p className="text-gray-600 dark:text-stone-400">{user?.email}</p>
+            <p className="text-sm text-gray-500 dark:text-stone-500 mt-1">
               {user?.role === 'admin' ? 'Администратор' : 'Пользователь'}
             </p>
           </div>
@@ -72,12 +74,12 @@ export function ProfilePage({ onBookClick, initialTab = 'favorites' }: ProfilePa
               className={`flex items-center gap-2 px-6 py-4 font-medium transition-colors ${
                 activeTab === 'favorites'
                   ? 'text-amber-600 dark:text-amber-500 border-b-2 border-amber-600 dark:border-amber-500'
-                  : 'text-gray-600 hover:text-gray-900'
+                  : 'text-gray-600 dark:text-stone-400 hover:text-gray-900 dark:hover:text-stone-200'
               }`}
             >
               <Heart className="w-5 h-5" />
               Избранное
-              <span className="ml-1 px-2 py-0.5 bg-gray-100 rounded-full text-sm">
+              <span className="ml-1 px-2 py-0.5 bg-gray-100 dark:bg-stone-700 rounded-full text-sm">
                 {favorites.length}
               </span>
             </button>
@@ -145,7 +147,7 @@ export function ProfilePage({ onBookClick, initialTab = 'favorites' }: ProfilePa
                   <div className="w-24 h-36 flex-shrink-0 bg-gray-100 rounded overflow-hidden">
                     {item.coverFile ? (
                       <img
-                        src={item.coverFile}
+                        src={item.coverFile.startsWith('http') ? item.coverFile : `${API_BASE}${item.coverFile.startsWith('/') ? '' : '/'}${item.coverFile}`}
                         alt={item.title}
                         className="w-full h-full object-cover"
                       />
@@ -157,22 +159,22 @@ export function ProfilePage({ onBookClick, initialTab = 'favorites' }: ProfilePa
                   </div>
 
                   <div className="flex-1 min-w-0">
-                    <h3 className="font-semibold text-gray-900 mb-2">{item.title}</h3>
+                    <h3 className="font-semibold text-gray-900 dark:text-stone-100 mb-2">{item.title}</h3>
 
                     <div className="mb-3">
-                      <div className="flex items-center justify-between text-sm text-gray-600 mb-1">
+                      <div className="flex items-center justify-between text-sm text-gray-600 dark:text-stone-400 mb-1">
                         <span>Прогресс</span>
-                        <span>{item.progress}%</span>
+                        <span>{item.progress || 0}%</span>
                       </div>
-                      <div className="w-full bg-gray-200 rounded-full h-2">
+                      <div className="w-full bg-gray-200 dark:bg-stone-700 rounded-full h-2">
                         <div
                           className="bg-amber-600 h-2 rounded-full transition-all"
-                          style={{ width: `${item.progress}%` }}
+                          style={{ width: `${item.progress || 0}%` }}
                         />
                       </div>
                     </div>
 
-                    <div className="flex items-center gap-4 text-sm text-gray-600">
+                    <div className="flex items-center gap-4 text-sm text-gray-600 dark:text-stone-400">
                       <div className="flex items-center gap-1">
                         <BookOpen className="w-4 h-4" />
                         <span>Страница {item.page}</span>
