@@ -128,6 +128,7 @@ export interface UpdateCollectionDto {
 }
 
 export interface BookQueryParams {
+  searchTerm?: string;
   genreId?: number;
   authorId?: number;
   page?: number;
@@ -135,6 +136,12 @@ export interface BookQueryParams {
   sortBy?: 'Title' | 'Rate';
   sortOrder?: 'Asc' | 'Desc';
   query?: string;
+}
+
+export interface PaginationQueryParams {
+  searchTerm?: string;
+  page?: number;
+  pageSize?: number;
 }
 
 export interface PaginatedResponse<T> {

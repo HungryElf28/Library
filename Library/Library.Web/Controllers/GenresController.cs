@@ -1,5 +1,6 @@
 ﻿using Library.Application.Services;
 using Library.Web.DTO.Genres;
+using Library.Web.DTO.Common;
 using Library.Domain.Entities;
 
 using Microsoft.AspNetCore.Http;
@@ -21,10 +22,13 @@ namespace Library.Web.Controllers
         }
 
         [HttpGet]
-        public async Task<IActionResult> GetAll([FromQuery] string? searchTerm, [FromQuery] int page = 1, [FromQuery] int pageSize = 10)
+        public async Task<IActionResult> GetAll([FromQuery] PaginationQueryDto query)
         {
-            var (items, total) = await _service.GetPaged(searchTerm, page, pageSize);
-            return Ok(new { Items = items, Total = total, Page = page, PageSize = pageSize });
+            var page = query.NormalizedPage;
+            var pageSize = query.NormalizedPageSize;
+            var (items, total) = await _service.GetPaged(query.SearchTerm, page, pageSize);
+
+            return Ok(PagedResponseDto<Genre>.Create(items, total, page, pageSize));
         }
 
         [HttpGet("{id}")]

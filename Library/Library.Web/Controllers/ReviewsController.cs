@@ -1,8 +1,8 @@
-﻿using Library.Application.Services;
+using Library.Application.Services;
+using Library.Web.DTO.Common;
 using Library.Web.DTO.Reviews;
 using Library.Web.Extensions;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Library.Web.Controllers
@@ -33,18 +33,34 @@ namespace Library.Web.Controllers
         }
 
         [HttpGet("{bookId}")]
-        public async Task<IActionResult> Get(int bookId)
+        public async Task<IActionResult> Get(int bookId, [FromQuery] PaginationQueryDto query)
         {
+            var page = query.NormalizedPage;
+            var pageSize = query.NormalizedPageSize;
             var reviews = await _service.GetByBook(bookId);
 
-            var result = reviews.Select(r => new
+            if (!string.IsNullOrWhiteSpace(query.SearchTerm))
             {
-                r.UserId,
-                r.Rate,
-                r.Text
-            });
+                reviews = reviews
+                    .Where(r => r.Text?.Contains(query.SearchTerm, StringComparison.OrdinalIgnoreCase) == true)
+                    .ToList();
+            }
 
-            return Ok(result);
+            var total = reviews.Count;
+            var items = reviews
+                .OrderByDescending(r => r.Id)
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
+                .Select(r => new
+                {
+                    r.Id,
+                    r.UserId,
+                    r.BookId,
+                    r.Rate,
+                    r.Text
+                });
+
+            return Ok(PagedResponseDto<object>.Create(items, total, page, pageSize));
         }
     }
 }

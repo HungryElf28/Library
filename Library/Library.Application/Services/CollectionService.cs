@@ -26,6 +26,19 @@ namespace Library.Application.Services
         public Task Create(string title, int userId)
             => _repo.AddAsync(new Collection(0, title, userId));
 
+        public async Task Update(int id, string title, int userId)
+        {
+            var collection = await _repo.GetByIdAsync(id);
+
+            if (collection == null)
+                throw new Exception("Collection not found");
+
+            if (collection.UserId != userId)
+                throw new UnauthorizedAccessException();
+
+            await _repo.UpdateAsync(new Collection(id, title, userId));
+        }
+
         public async Task AddBook(int collectionId, int bookId, int userId)
         {
             var collection = await _repo.GetByIdAsync(collectionId);

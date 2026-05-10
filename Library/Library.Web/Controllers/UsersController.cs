@@ -1,9 +1,8 @@
-﻿using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Authorization;
-using System.Security.Claims;
 using Library.Application.Services;
+using Library.Web.DTO.Common;
 using Library.Web.Extensions;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 
 namespace Library.Web.Controllers
 {
@@ -42,41 +41,68 @@ namespace Library.Web.Controllers
 
         [Authorize]
         [HttpGet("favorites")]
-        public async Task<IActionResult> GetFavorites()
+        public async Task<IActionResult> GetFavorites([FromQuery] PaginationQueryDto query)
         {
             var userId = User.GetUserId();
+            var page = query.NormalizedPage;
+            var pageSize = query.NormalizedPageSize;
 
             var books = await _service.GetFavorites(userId);
-
-            var result = books.Select(b => new
+            if (!string.IsNullOrWhiteSpace(query.SearchTerm))
             {
-                b.Id,
-                b.Title,
-                b.CoverFile,
-                Authors = b.Authors.Select(a => a.Name)
-            });
+                books = books
+                    .Where(b =>
+                        b.Title.Contains(query.SearchTerm, StringComparison.OrdinalIgnoreCase) ||
+                        b.Authors.Any(a => a.Name.Contains(query.SearchTerm, StringComparison.OrdinalIgnoreCase)))
+                    .ToList();
+            }
 
-            return Ok(result);
+            var total = books.Count;
+            var items = books
+                .OrderBy(b => b.Title)
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
+                .Select(b => new
+                {
+                    b.Id,
+                    b.Title,
+                    b.CoverFile,
+                    Authors = b.Authors.Select(a => a.Name).ToList()
+                });
+
+            return Ok(PagedResponseDto<object>.Create(items, total, page, pageSize));
         }
 
         [Authorize]
         [HttpGet("reading")]
-        public async Task<IActionResult> GetReading()
+        public async Task<IActionResult> GetReading([FromQuery] PaginationQueryDto query)
         {
             var userId = User.GetUserId();
+            var page = query.NormalizedPage;
+            var pageSize = query.NormalizedPageSize;
 
             var books = await _service.GetReading(userId);
-
-            var result = books.Select(b => new
+            if (!string.IsNullOrWhiteSpace(query.SearchTerm))
             {
-                b.BookId,
-                b.Title,
-                b.CoverFile,
-                b.Page,
-                b.LastOpened
-            });
+                books = books
+                    .Where(b => b.Title.Contains(query.SearchTerm, StringComparison.OrdinalIgnoreCase))
+                    .ToList();
+            }
 
-            return Ok(result);
+            var total = books.Count;
+            var items = books
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
+                .Select(b => new
+                {
+                    b.BookId,
+                    b.Title,
+                    b.CoverFile,
+                    b.Page,
+                    b.LastOpened
+                });
+
+            return Ok(PagedResponseDto<object>.Create(items, total, page, pageSize));
         }
 
         [Authorize]
@@ -100,10 +126,31 @@ namespace Library.Web.Controllers
 
         [Authorize]
         [HttpGet("all")]
-        public async Task<IActionResult> GetAllUsers()
+        public async Task<IActionResult> GetAllUsers([FromQuery] PaginationQueryDto query)
         {
             if (!User.IsAdmin()) return Forbid();
-            return Ok(await _service.GetAllUsers());
+
+            var page = query.NormalizedPage;
+            var pageSize = query.NormalizedPageSize;
+            var users = await _service.GetAllUsers();
+
+            if (!string.IsNullOrWhiteSpace(query.SearchTerm))
+            {
+                users = users
+                    .Where(u =>
+                        u.Login.Contains(query.SearchTerm, StringComparison.OrdinalIgnoreCase) ||
+                        u.Email.Contains(query.SearchTerm, StringComparison.OrdinalIgnoreCase) ||
+                        u.RoleName.Contains(query.SearchTerm, StringComparison.OrdinalIgnoreCase))
+                    .ToList();
+            }
+
+            var total = users.Count;
+            var items = users
+                .OrderBy(u => u.Login)
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize);
+
+            return Ok(PagedResponseDto<Library.Domain.Entities.User>.Create(items, total, page, pageSize));
         }
 
         [Authorize]

@@ -1,6 +1,7 @@
 ﻿using Library.Application.Services;
 using Library.Web.DTO.Authors;
 using Library.Web.DTO.Books;
+using Library.Web.DTO.Common;
 using Library.Web.DTO.Genres;
 using Library.Web.DTO.Tags;
 using Library.Domain.Entities;
@@ -162,7 +163,7 @@ namespace Library.Web.Controllers
         public async Task<IActionResult> Get([FromQuery] BookQueryDto query)
         {
             var page = query.Page < 1 ? 1 : query.Page;
-            var pageSize = Math.Min(query.PageSize, 50);
+            var pageSize = query.PageSize < 1 ? 10 : Math.Min(query.PageSize, 50);
 
             var (books, total) = await _service.GetPaged(
                 query.SearchTerm,
@@ -174,19 +175,18 @@ namespace Library.Web.Controllers
                 query.SortOrder
             );
 
-            return Ok(new
-            {
-                Total = total,
-                Page = page,
-                PageSize = pageSize,
-                Items = books.Select(b => new
+            return Ok(PagedResponseDto<object>.Create(
+                books.Select(b => new
                 {
                     b.Id,
                     b.Title,
                     b.CoverFile,
                     Authors = b.Authors.Select(a => a.Name).ToList()
-                })
-            });
+                }),
+                total,
+                page,
+                pageSize
+            ));
         }
 
         private string EnsureUploadsPath()

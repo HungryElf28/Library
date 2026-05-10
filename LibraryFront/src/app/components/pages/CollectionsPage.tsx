@@ -27,7 +27,7 @@ export function CollectionsPage({ onBookClick }: CollectionsPageProps) {
     setLoading(true);
     try {
       const data = await api.collections.getAll();
-      setCollections(data);
+      setCollections(data.items);
     } catch (error) {
       console.error('Error loading collections:', error);
     } finally {

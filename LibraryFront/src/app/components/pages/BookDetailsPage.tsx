@@ -44,7 +44,7 @@ export function BookDetailsPage({ bookId, onStartReading, onBack }: BookDetailsP
   const loadReviews = async () => {
     try {
       const data = await api.reviews.getByBookId(bookId);
-      setReviews(data);
+      setReviews(data.items);
     } catch (error) {
       console.error('Error loading reviews:', error);
     }
@@ -55,7 +55,7 @@ export function BookDetailsPage({ bookId, onStartReading, onBack }: BookDetailsP
 
     try {
       const favorites = await api.users.getFavorites();
-      setIsFavorite(favorites.some(b => b.id === bookId));
+      setIsFavorite(favorites.items.some(b => b.id === bookId));
     } catch (error) {
       console.error('Error checking favorite:', error);
     }
@@ -97,7 +97,7 @@ export function BookDetailsPage({ bookId, onStartReading, onBack }: BookDetailsP
 
     try {
       const data = await api.collections.getAll();
-      setCollections(data);
+      setCollections(data.items);
     } catch (error) {
       console.error('Error loading collections:', error);
     }

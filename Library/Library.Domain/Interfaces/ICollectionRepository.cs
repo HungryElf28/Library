@@ -15,6 +15,8 @@ namespace Library.Domain.Interfaces
 
         Task AddAsync(Collection collection);
 
+        Task UpdateAsync(Collection collection);
+
         Task AddBookAsync(int collectionId, int bookId);
 
         Task RemoveBookAsync(int collectionId, int bookId);

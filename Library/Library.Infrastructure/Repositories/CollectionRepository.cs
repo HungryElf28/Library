@@ -21,29 +21,25 @@ namespace Library.Infrastructure.Repositories
 
         public async Task<List<Collection>> GetByUserIdAsync(int userId)
         {
-            return await _context.Collections
+            var collections = await _context.Collections
+                .Include(c => c.Books)
+                    .ThenInclude(b => b.Authors)
                 .Where(c => c.UserId == userId)
-                .Select(c => new Collection(c.Id, c.Title, c.UserId))
                 .ToListAsync();
+
+            return collections.Select(ToDomain).ToList();
         }
 
         public async Task<Collection?> GetByIdAsync(int id)
         {
             var ef = await _context.Collections
                 .Include(c => c.Books)
+                    .ThenInclude(b => b.Authors)
                 .FirstOrDefaultAsync(c => c.Id == id);
 
             if (ef == null) return null;
 
-            var collection = new Collection(ef.Id, ef.Title, ef.UserId);
-
-            collection.Books.AddRange(
-                ef.Books.Select(b =>
-                    new Book(b.Id, b.Title, b.TextFile, b.CoverFile, b.Description)
-                )
-            );
-
-            return collection;
+            return ToDomain(ef);
         }
 
         public async Task AddAsync(Collection collection)
@@ -55,6 +51,17 @@ namespace Library.Infrastructure.Repositories
             };
 
             _context.Collections.Add(ef);
+            await _context.SaveChangesAsync();
+        }
+
+        public async Task UpdateAsync(Collection collection)
+        {
+            var ef = await _context.Collections.FindAsync(collection.Id);
+
+            if (ef == null)
+                throw new Exception("Not found");
+
+            ef.Title = collection.Title;
             await _context.SaveChangesAsync();
         }
 
@@ -103,6 +110,21 @@ namespace Library.Infrastructure.Repositories
             await _context.SaveChangesAsync();
         }
 
+        private static Collection ToDomain(Data.Models.Collection ef)
+        {
+            var collection = new Collection(ef.Id, ef.Title, ef.UserId);
+
+            collection.Books.AddRange(
+                ef.Books.Select(b =>
+                {
+                    var book = new Book(b.Id, b.Title, b.TextFile, b.CoverFile, b.Description);
+                    book.Authors.AddRange(b.Authors.Select(a => new Author(a.Id, a.Name, a.Bio, a.Photo)));
+                    return book;
+                })
+            );
+
+            return collection;
+        }
 
     }
 }

@@ -26,10 +26,10 @@ export function ProfilePage({ onBookClick, initialTab = 'favorites' }: ProfilePa
     try {
       if (activeTab === 'favorites') {
         const data = await api.users.getFavorites();
-        setFavorites(data);
+        setFavorites(data.items);
       } else {
         const data = await api.users.getReading();
-        setReading(data);
+        setReading(data.items);
       }
     } catch (error) {
       console.error('Error loading data:', error);

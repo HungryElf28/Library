@@ -72,7 +72,7 @@ export function CatalogPage({ onBookClick }: CatalogPageProps) {
   const loadFavorites = async () => {
     try {
       const data = await api.users.getFavorites();
-      setFavorites(data.map(book => book.id));
+      setFavorites(data.items.map(book => book.id));
     } catch (error) {
       console.error('Error loading favorites:', error);
     }

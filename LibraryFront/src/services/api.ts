@@ -18,6 +18,7 @@ import {
   CreateCollectionDto,
   UpdateCollectionDto,
   BookQueryParams,
+  PaginationQueryParams,
   PaginatedResponse,
   AuthResponse,
   ReadingBook,
@@ -39,6 +40,12 @@ const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
 let currentUser: User | null = null;
 let authToken: string | null = localStorage.getItem(STORAGE_KEY);
+
+function appendPaginationParams(queryParams: URLSearchParams, params: PaginationQueryParams = {}) {
+  if (params.searchTerm) queryParams.append('SearchTerm', params.searchTerm);
+  if (params.page) queryParams.append('Page', params.page.toString());
+  if (params.pageSize) queryParams.append('PageSize', params.pageSize.toString());
+}
 
 async function fetchWithAuth(url: string, options: RequestInit = {}): Promise<Response> {
   const isFormData = options.body instanceof FormData;
@@ -123,10 +130,9 @@ export const api = {
   books: {
     async getAll(params: BookQueryParams = {}): Promise<PaginatedResponse<BookListItem>> {
       const queryParams = new URLSearchParams();
+      appendPaginationParams(queryParams, params);
       if (params.genreId) queryParams.append('GenreId', params.genreId.toString());
       if (params.authorId) queryParams.append('AuthorId', params.authorId.toString());
-      if (params.page) queryParams.append('Page', params.page.toString());
-      if (params.pageSize) queryParams.append('PageSize', params.pageSize.toString());
       if (params.sortBy) queryParams.append('SortBy', params.sortBy);
       if (params.sortOrder) queryParams.append('SortOrder', params.sortOrder);
 
@@ -175,11 +181,9 @@ export const api = {
   },
 
   authors: {
-    async getAll(params: { searchTerm?: string; page?: number; pageSize?: number } = {}): Promise<PaginatedResponse<Author>> {
+    async getAll(params: PaginationQueryParams = {}): Promise<PaginatedResponse<Author>> {
       const queryParams = new URLSearchParams();
-      if (params.searchTerm) queryParams.append('searchTerm', params.searchTerm);
-      if (params.page) queryParams.append('page', params.page.toString());
-      if (params.pageSize) queryParams.append('pageSize', params.pageSize.toString());
+      appendPaginationParams(queryParams, params);
 
       const response = await fetchWithAuth(`${API_BASE}/api/authors?${queryParams}`, {
         method: 'GET',
@@ -218,11 +222,9 @@ export const api = {
   },
 
   genres: {
-    async getAll(params: { searchTerm?: string; page?: number; pageSize?: number } = {}): Promise<PaginatedResponse<Genre>> {
+    async getAll(params: PaginationQueryParams = {}): Promise<PaginatedResponse<Genre>> {
       const queryParams = new URLSearchParams();
-      if (params.searchTerm) queryParams.append('searchTerm', params.searchTerm);
-      if (params.page) queryParams.append('page', params.page.toString());
-      if (params.pageSize) queryParams.append('pageSize', params.pageSize.toString());
+      appendPaginationParams(queryParams, params);
 
       const response = await fetchWithAuth(`${API_BASE}/api/genres?${queryParams}`, {
         method: 'GET',
@@ -261,11 +263,9 @@ export const api = {
   },
 
   tags: {
-    async getAll(params: { searchTerm?: string; page?: number; pageSize?: number } = {}): Promise<PaginatedResponse<Tag>> {
+    async getAll(params: PaginationQueryParams = {}): Promise<PaginatedResponse<Tag>> {
       const queryParams = new URLSearchParams();
-      if (params.searchTerm) queryParams.append('searchTerm', params.searchTerm);
-      if (params.page) queryParams.append('page', params.page.toString());
-      if (params.pageSize) queryParams.append('pageSize', params.pageSize.toString());
+      appendPaginationParams(queryParams, params);
 
       const response = await fetchWithAuth(`${API_BASE}/api/tags?${queryParams}`, {
         method: 'GET',
@@ -304,8 +304,11 @@ export const api = {
   },
 
   reviews: {
-    async getByBookId(bookId: number): Promise<Review[]> {
-      const response = await fetchWithAuth(`${API_BASE}/api/Reviews/${bookId}`, {
+    async getByBookId(bookId: number, params: PaginationQueryParams = { page: 1, pageSize: 50 }): Promise<PaginatedResponse<Review>> {
+      const queryParams = new URLSearchParams();
+      appendPaginationParams(queryParams, params);
+
+      const response = await fetchWithAuth(`${API_BASE}/api/Reviews/${bookId}?${queryParams}`, {
         method: 'GET',
       });
       return response.json();
@@ -321,8 +324,11 @@ export const api = {
   },
 
   users: {
-    async getFavorites(): Promise<BookListItem[]> {
-      const response = await fetchWithAuth(`${API_BASE}/api/Users/favorites`, {
+    async getFavorites(params: PaginationQueryParams = { page: 1, pageSize: 100 }): Promise<PaginatedResponse<BookListItem>> {
+      const queryParams = new URLSearchParams();
+      appendPaginationParams(queryParams, params);
+
+      const response = await fetchWithAuth(`${API_BASE}/api/Users/favorites?${queryParams}`, {
         method: 'GET',
       });
       return response.json();
@@ -340,8 +346,11 @@ export const api = {
       });
     },
 
-    async getReading(): Promise<ReadingBook[]> {
-      const response = await fetchWithAuth(`${API_BASE}/api/Users/reading`, {
+    async getReading(params: PaginationQueryParams = { page: 1, pageSize: 100 }): Promise<PaginatedResponse<ReadingBook>> {
+      const queryParams = new URLSearchParams();
+      appendPaginationParams(queryParams, params);
+
+      const response = await fetchWithAuth(`${API_BASE}/api/Users/reading?${queryParams}`, {
         method: 'GET',
       });
       return response.json();
@@ -361,8 +370,11 @@ export const api = {
       });
     },
 
-    async getAllUsers(): Promise<User[]> {
-      const response = await fetchWithAuth(`${API_BASE}/api/Users/all`, {
+    async getAllUsers(params: PaginationQueryParams = { page: 1, pageSize: 100 }): Promise<PaginatedResponse<User>> {
+      const queryParams = new URLSearchParams();
+      appendPaginationParams(queryParams, params);
+
+      const response = await fetchWithAuth(`${API_BASE}/api/Users/all?${queryParams}`, {
         method: 'GET',
       });
       return response.json();
@@ -395,8 +407,11 @@ export const api = {
   },
 
   collections: {
-    async getAll(): Promise<Collection[]> {
-      const response = await fetchWithAuth(`${API_BASE}/api/Collections`, {
+    async getAll(params: PaginationQueryParams = { page: 1, pageSize: 100 }): Promise<PaginatedResponse<Collection>> {
+      const queryParams = new URLSearchParams();
+      appendPaginationParams(queryParams, params);
+
+      const response = await fetchWithAuth(`${API_BASE}/api/Collections?${queryParams}`, {
         method: 'GET',
       });
       return response.json();
