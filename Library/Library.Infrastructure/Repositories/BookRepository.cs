@@ -1,4 +1,4 @@
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 using Library.Domain.Entities;
 using Library.Domain.Interfaces;
 using Library.Infrastructure.Data;
@@ -143,39 +143,53 @@ public class BookRepository : IBookRepository
             .ToLower()
             .Split(' ', StringSplitOptions.RemoveEmptyEntries);
 
-        var booksQuery = _context.Books.AsQueryable();
+        var booksQuery = _context.Books
+            .Include(b => b.Authors)
+            .Include(b => b.Genres)
+            .Include(b => b.Reviews)
+            .AsQueryable();
 
-        // 🔥 AND логика
-        foreach (var term in terms)
-        {
-            var t = term; // важно для EF
+        var results = await booksQuery
+            .Select(b => new
+            {
+                Book = b,
+                TitleSimilarity = EF.Functions.TrigramsSimilarity(b.Title, query),
+                AuthorSimilarity = b.Authors.Any() 
+                    ? b.Authors.Max(a => (double?)EF.Functions.TrigramsSimilarity(a.Name, query)) ?? 0 
+                    : 0,
+                TitleContains = EF.Functions.ILike(b.Title, $"%{query}%")
+            })
+            .Where(x =>
+                x.TitleContains ||
+                x.TitleSimilarity > 0.2 ||
+                x.Book.Authors.Any(a => EF.Functions.ILike(a.Name, $"%{query}%") || EF.Functions.TrigramsSimilarity(a.Name, query) > 0.2)
+            )
+            .OrderByDescending(x => (x.TitleContains ? 2.0 : 0) + (x.TitleSimilarity * 1.5) + (x.AuthorSimilarity * 1.0))
+            .Take(20)
+            .ToListAsync();
 
-            booksQuery = booksQuery.Where(b =>
-                EF.Functions.ILike(b.Title, $"%{t}%") ||
-                EF.Functions.TrigramsSimilarity(b.Title, t) > 0.3
-            );
-        }
-
-        return await booksQuery
-            .Select(b => new SearchProjection
+        return results.Select(x => {
+            var b = x.Book;
+            return new SearchProjection
             {
                 Type = "book",
                 Id = b.Id,
                 Title = b.Title,
-
-                Score = terms.Sum(t =>
-                    EF.Functions.TrigramsSimilarity(b.Title, t)
-                ) + (EF.Functions.ILike(b.Title, $"%{query}%") ? 1 : 0)
-            })
-            .OrderByDescending(x => x.Score)
-            .Take(10)
-            .ToListAsync();
+                CoverFile = b.CoverFile,
+                AuthorNames = b.Authors.Select(a => a.Name).ToList(),
+                GenreNames = b.Genres.Select(g => g.Name).ToList(),
+                AverageRating = b.Reviews.Any() ? b.Reviews.Average(r => (double)r.Rate) : 0,
+                Score = (x.TitleContains ? 2.0 : 0) + (x.TitleSimilarity * 1.5) + (x.AuthorSimilarity * 1.0)
+            };
+        })
+        .ToList();
     }
 
     public async Task<(List<Book> Items, int TotalCount)> GetPagedAsync(
     string? searchTerm,
     int? genreId,
     int? authorId,
+    int? tagId,
     int page,
     int pageSize,
     BookSortBy sortBy,
@@ -207,6 +221,11 @@ public class BookRepository : IBookRepository
         query = query.Where(b => b.Authors.Any(a => a.Id == authorId));
     }
 
+    if (tagId.HasValue)
+    {
+        query = query.Where(b => b.Tags.Any(t => t.Id == tagId));
+    }
+
     query = sortBy switch
     {
         BookSortBy.Title => sortOrder == BookSortOrder.Desc
@@ -229,4 +248,71 @@ public class BookRepository : IBookRepository
 
     return (items.Select(BookMapper.ToDomain).ToList(), total);
 }
+
+    public async Task<List<Book>> GetRecommendationsAsync(int userId, List<int> authorIds, List<int> genreIds, List<int> tagIds, List<int> excludeBookIds)
+    {
+        var query = _context.Books
+            .Include(b => b.Authors)
+            .Include(b => b.Genres)
+            .Include(b => b.Tags)
+            .Include(b => b.Reviews)
+            .Where(b => !excludeBookIds.Contains(b.Id))
+            .AsQueryable();
+
+        if (!authorIds.Any() && !genreIds.Any() && !tagIds.Any())
+        {
+            return (await query
+                .OrderByDescending(b => b.Reviews.Any() ? b.Reviews.Average(r => r.Rate) : 0)
+                .Take(10)
+                .ToListAsync())
+                .Select(BookMapper.ToDomain)
+                .ToList();
+        }
+
+        var books = await query.ToListAsync();
+
+        var recommendations = books
+            .Select(b => new
+            {
+                Book = b,
+                Score = (b.Authors.Count(a => authorIds.Contains(a.Id)) * 3) +
+                        (b.Genres.Count(g => genreIds.Contains(g.Id)) * 2) +
+                        (b.Tags.Count(t => tagIds.Contains(t.Id)) * 1) +
+                        (b.Reviews.Any() ? b.Reviews.Average(r => (double)r.Rate) / 2.0 : 0)
+            })
+            .Where(x => x.Score > 0)
+            .OrderByDescending(x => x.Score)
+            .Take(15)
+            .Select(x => BookMapper.ToDomain(x.Book))
+            .ToList();
+
+        return recommendations;
+    }
+
+    public async Task<List<Book>> GetMostReadBooksAsync(int count, int? genreId = null, int? authorId = null)
+    {
+        var query = _context.Books
+            .Include(b => b.Authors)
+            .Include(b => b.Genres)
+            .Include(b => b.Tags)
+            .Include(b => b.Reviews)
+            .AsQueryable();
+
+        if (genreId.HasValue)
+        {
+            query = query.Where(b => b.Genres.Any(g => g.Id == genreId));
+        }
+
+        if (authorId.HasValue)
+        {
+            query = query.Where(b => b.Authors.Any(a => a.Id == authorId));
+        }
+
+        var books = await query
+            .OrderByDescending(b => b.ReadCount)
+            .Take(count)
+            .ToListAsync();
+
+        return books.Select(BookMapper.ToDomain).ToList();
+    }
 }

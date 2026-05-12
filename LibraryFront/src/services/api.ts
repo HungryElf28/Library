@@ -64,6 +64,15 @@ async function fetchWithAuth(url: string, options: RequestInit = {}): Promise<Re
   return response;
 }
 
+async function safeJsonResponse<T>(response: Response): Promise<T> {
+  const contentType = response.headers.get('content-type');
+  if (response.status === 204 || !contentType || !contentType.includes('application/json')) {
+    return {} as T;
+  }
+  const text = await response.text();
+  return text ? JSON.parse(text) : ({} as T);
+}
+
 export const api = {
   auth: {
     async login(data: LoginDto): Promise<AuthResponse> {
@@ -72,7 +81,7 @@ export const api = {
         body: JSON.stringify(data),
       });
 
-      const result = await response.json();
+      const result = await safeJsonResponse<AuthResponse>(response);
       
       localStorage.setItem(STORAGE_KEY, result.token || '');
       authToken = result.token || '';
@@ -87,7 +96,7 @@ export const api = {
         body: JSON.stringify(data),
       });
 
-      const result = await response.json();
+      const result = await safeJsonResponse<AuthResponse>(response);
       
       localStorage.setItem(STORAGE_KEY, result.token || '');
       authToken = result.token || '';
@@ -114,7 +123,7 @@ export const api = {
       const response = await fetchWithAuth(`${API_BASE}/api/auth/me`, {
         method: 'GET',
       });
-      const user = await response.json();
+      const user = await safeJsonResponse<User>(response);
       currentUser = user;
       return user;
     },
@@ -126,6 +135,7 @@ export const api = {
       appendPaginationParams(queryParams, params);
       if (params.genreId) queryParams.append('GenreId', params.genreId.toString());
       if (params.authorId) queryParams.append('AuthorId', params.authorId.toString());
+      if (params.tagId) queryParams.append('TagId', params.tagId.toString());
       if (params.sortBy) queryParams.append('SortBy', params.sortBy);
       if (params.sortOrder) queryParams.append('SortOrder', params.sortOrder);
 
@@ -133,14 +143,14 @@ export const api = {
         method: 'GET',
       });
 
-      return response.json();
+      return safeJsonResponse<PaginatedResponse<BookListItem>>(response);
     },
 
     async getById(id: number): Promise<Book> {
       const response = await fetchWithAuth(`${API_BASE}/api/books/${id}`, {
         method: 'GET',
       });
-      return response.json();
+      return safeJsonResponse<Book>(response);
     },
 
     async create(data: FormData): Promise<Book> {
@@ -148,7 +158,7 @@ export const api = {
         method: 'POST',
         body: data,
       });
-      return response.json();
+      return safeJsonResponse<Book>(response);
     },
 
     async update(id: number, data: FormData): Promise<Book> {
@@ -156,7 +166,7 @@ export const api = {
         method: 'PUT',
         body: data,
       });
-      return response.json();
+      return safeJsonResponse<Book>(response);
     },
 
     async delete(id: number): Promise<void> {
@@ -169,7 +179,19 @@ export const api = {
       const response = await fetchWithAuth(`${API_BASE}/api/books/recommendations`, {
         method: 'GET',
       });
-      return response.json();
+      return safeJsonResponse<BookListItem[]>(response);
+    },
+
+    async getMostRead(params: { count?: number; genreId?: number; authorId?: number } = {}): Promise<BookListItem[]> {
+      const queryParams = new URLSearchParams();
+      if (params.count) queryParams.append('count', params.count.toString());
+      if (params.genreId) queryParams.append('genreId', params.genreId.toString());
+      if (params.authorId) queryParams.append('authorId', params.authorId.toString());
+
+      const response = await fetchWithAuth(`${API_BASE}/api/books/most-read?${queryParams}`, {
+        method: 'GET',
+      });
+      return safeJsonResponse<BookListItem[]>(response);
     },
   },
 
@@ -181,14 +203,14 @@ export const api = {
       const response = await fetchWithAuth(`${API_BASE}/api/authors?${queryParams}`, {
         method: 'GET',
       });
-      return response.json();
+      return safeJsonResponse<PaginatedResponse<Author>>(response);
     },
 
     async getById(id: number): Promise<Author> {
       const response = await fetchWithAuth(`${API_BASE}/api/authors/${id}`, {
         method: 'GET',
       });
-      return response.json();
+      return safeJsonResponse<Author>(response);
     },
 
     async create(data: FormData): Promise<Author> {
@@ -196,7 +218,7 @@ export const api = {
         method: 'POST',
         body: data,
       });
-      return response.json();
+      return safeJsonResponse<Author>(response);
     },
 
     async update(id: number, data: FormData): Promise<Author> {
@@ -204,7 +226,7 @@ export const api = {
         method: 'PUT',
         body: data,
       });
-      return response.json();
+      return safeJsonResponse<Author>(response);
     },
 
     async delete(id: number): Promise<void> {
@@ -222,14 +244,14 @@ export const api = {
       const response = await fetchWithAuth(`${API_BASE}/api/genres?${queryParams}`, {
         method: 'GET',
       });
-      return response.json();
+      return safeJsonResponse<PaginatedResponse<Genre>>(response);
     },
 
     async getById(id: number): Promise<Genre> {
       const response = await fetchWithAuth(`${API_BASE}/api/genres/${id}`, {
         method: 'GET',
       });
-      return response.json();
+      return safeJsonResponse<Genre>(response);
     },
 
     async create(data: CreateGenreDto): Promise<Genre> {
@@ -237,7 +259,7 @@ export const api = {
         method: 'POST',
         body: JSON.stringify(data),
       });
-      return response.json();
+      return safeJsonResponse<Genre>(response);
     },
 
     async update(id: number, data: UpdateGenreDto): Promise<Genre> {
@@ -245,7 +267,7 @@ export const api = {
         method: 'PUT',
         body: JSON.stringify(data),
       });
-      return response.json();
+      return safeJsonResponse<Genre>(response);
     },
 
     async delete(id: number): Promise<void> {
@@ -263,14 +285,14 @@ export const api = {
       const response = await fetchWithAuth(`${API_BASE}/api/tags?${queryParams}`, {
         method: 'GET',
       });
-      return response.json();
+      return safeJsonResponse<PaginatedResponse<Tag>>(response);
     },
 
     async getById(id: number): Promise<Tag> {
       const response = await fetchWithAuth(`${API_BASE}/api/tags/${id}`, {
         method: 'GET',
       });
-      return response.json();
+      return safeJsonResponse<Tag>(response);
     },
 
     async create(data: { name: string }): Promise<Tag> {
@@ -278,7 +300,7 @@ export const api = {
         method: 'POST',
         body: JSON.stringify(data),
       });
-      return response.json();
+      return safeJsonResponse<Tag>(response);
     },
 
     async update(id: number, data: { name: string }): Promise<Tag> {
@@ -286,7 +308,7 @@ export const api = {
         method: 'PUT',
         body: JSON.stringify(data),
       });
-      return response.json();
+      return safeJsonResponse<Tag>(response);
     },
 
     async delete(id: number): Promise<void> {
@@ -304,7 +326,7 @@ export const api = {
       const response = await fetchWithAuth(`${API_BASE}/api/Reviews/${bookId}?${queryParams}`, {
         method: 'GET',
       });
-      return response.json();
+      return safeJsonResponse<PaginatedResponse<Review>>(response);
     },
 
     async create(bookId: number, data: CreateReviewDto): Promise<void> {
@@ -329,7 +351,7 @@ export const api = {
       const response = await fetchWithAuth(`${API_BASE}/api/Users/favorites?${queryParams}`, {
         method: 'GET',
       });
-      return response.json();
+      return safeJsonResponse<PaginatedResponse<BookListItem>>(response);
     },
 
     async addToFavorites(bookId: number): Promise<void> {
@@ -351,7 +373,7 @@ export const api = {
       const response = await fetchWithAuth(`${API_BASE}/api/Users/reading?${queryParams}`, {
         method: 'GET',
       });
-      return response.json();
+      return safeJsonResponse<PaginatedResponse<ReadingBook>>(response);
     },
 
     async saveProgress(bookId: number, page: number, totalPages: number): Promise<void> {
@@ -365,7 +387,7 @@ export const api = {
       const response = await fetchWithAuth(`${API_BASE}/api/Users/reading/${bookId}`, {
         method: 'GET',
       });
-      return response.json();
+      return safeJsonResponse<ReadingBook>(response);
     },
 
     async updateSubscription(isSubscribed: boolean): Promise<void> {
@@ -382,7 +404,7 @@ export const api = {
       const response = await fetchWithAuth(`${API_BASE}/api/Users/all?${queryParams}`, {
         method: 'GET',
       });
-      return response.json();
+      return safeJsonResponse<PaginatedResponse<User>>(response);
     },
 
     async deleteUser(userId: number): Promise<void> {
@@ -419,14 +441,14 @@ export const api = {
       const response = await fetchWithAuth(`${API_BASE}/api/Collections?${queryParams}`, {
         method: 'GET',
       });
-      return response.json();
+      return safeJsonResponse<PaginatedResponse<Collection>>(response);
     },
 
     async getById(id: number): Promise<Collection> {
       const response = await fetchWithAuth(`${API_BASE}/api/Collections/${id}`, {
         method: 'GET',
       });
-      return response.json();
+      return safeJsonResponse<Collection>(response);
     },
 
     async create(data: CreateCollectionDto): Promise<Collection> {
@@ -434,7 +456,7 @@ export const api = {
         method: 'POST',
         body: JSON.stringify(data),
       });
-      return response.json();
+      return safeJsonResponse<Collection>(response);
     },
 
     async update(id: number, data: UpdateCollectionDto): Promise<Collection> {
@@ -442,7 +464,7 @@ export const api = {
         method: 'PUT',
         body: JSON.stringify(data),
       });
-      return response.json();
+      return safeJsonResponse<Collection>(response);
     },
 
     async delete(id: number): Promise<void> {
@@ -469,7 +491,7 @@ export const api = {
       const response = await fetchWithAuth(`${API_BASE}/api/Bookmarks/${bookId}`, {
         method: 'GET',
       });
-      return response.json();
+      return safeJsonResponse<Bookmark[]>(response);
     },
 
     async create(bookId: number, page: number, note?: string): Promise<Bookmark> {
@@ -477,7 +499,7 @@ export const api = {
         method: 'POST',
         body: JSON.stringify({ page, note }),
       });
-      return response.json();
+      return safeJsonResponse<Bookmark>(response);
     },
 
     async update(bookmarkId: number, note?: string): Promise<void> {
@@ -495,13 +517,13 @@ export const api = {
   },
 
   search: {
-    async search(query: string): Promise<{ books: BookListItem[]; authors: Author[]; genres: Genre[] }> {
+    async search(query: string): Promise<SearchProjection[]> {
       const queryParams = new URLSearchParams({ query });
       const response = await fetchWithAuth(`${API_BASE}/api/search?${queryParams}`, {
         method: 'GET',
       });
 
-      return response.json();
+      return safeJsonResponse<SearchProjection[]>(response);
     },
   },
 };

@@ -17,6 +17,8 @@ public partial class Book
 
     public double Rating { get; set; }
 
+    public int ReadCount { get; set; }
+
     public virtual ICollection<Bookmark> Bookmarks { get; set; } = new List<Bookmark>();
 
     public virtual ICollection<ReadingBook> ReadingBooks { get; set; } = new List<ReadingBook>();

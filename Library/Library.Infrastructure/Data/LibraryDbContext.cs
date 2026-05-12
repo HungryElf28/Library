@@ -41,6 +41,8 @@ public partial class LibraryDbContext : DbContext
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
+        modelBuilder.HasPostgresExtension("pg_trgm");
+
         modelBuilder.Entity<Author>(entity =>
         {
             entity.HasKey(e => e.Id).HasName("Authors_pkey");
@@ -76,6 +78,9 @@ public partial class LibraryDbContext : DbContext
             entity.Property(e => e.Title)
                 .HasColumnType("character varying")
                 .HasColumnName("title");
+            entity.Property(e => e.ReadCount)
+                .HasColumnName("read_count")
+                .HasDefaultValue(0);
 
             entity.HasMany(d => d.Authors).WithMany(p => p.Books)
                 .UsingEntity<Dictionary<string, object>>(

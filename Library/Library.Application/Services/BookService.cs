@@ -42,35 +42,44 @@ namespace Library.Application.Services
         {
             await _repo.DeleteAsync(id);
         }
-        public async Task<(List<Book>, int)> GetPaged(string? searchTerm, int? genreId, int? authorId, int page, int pageSize, BookSortBy sortBy, BookSortOrder sortOrder)
+        public async Task<(List<Book>, int)> GetPaged(string? searchTerm, int? genreId, int? authorId, int? tagId, int page, int pageSize, BookSortBy sortBy, BookSortOrder sortOrder)
         {
-            return await _repo.GetPagedAsync(searchTerm, genreId, authorId, page, pageSize, sortBy, sortOrder);
+            return await _repo.GetPagedAsync(searchTerm, genreId, authorId, tagId, page, pageSize, sortBy, sortOrder);
         }
 
         public async Task<List<Book>> GetRecommendationsAsync(int userId, IUserRepository userRepo)
         {
             var favorites = await userRepo.GetFavoritesAsync(userId);
-            if (!favorites.Any())
-            {
-                // Return top rated or latest if no favorites
-                var (items, _) = await _repo.GetPagedAsync(null, null, null, 1, 10, BookSortBy.Rate, BookSortOrder.Desc);
-                return items;
-            }
-
-            var favoriteGenreIds = favorites.SelectMany(b => b.Genres).Select(g => g.Id).Distinct().ToList();
+            var readingProjections = await userRepo.GetReadingAsync(userId);
             
-            var recommendations = new List<Book>();
-            foreach (var genreId in favoriteGenreIds)
+            var readingBooks = new List<Book>();
+            foreach (var r in readingProjections)
             {
-                var (items, _) = await _repo.GetPagedAsync(null, genreId, null, 1, 5, BookSortBy.Rate, BookSortOrder.Desc);
-                recommendations.AddRange(items);
+                var b = await _repo.GetByIdAsync(r.BookId);
+                if (b != null) readingBooks.Add(b);
             }
 
-            return recommendations
-                .Where(r => !favorites.Any(f => f.Id == r.Id))
-                .DistinctBy(b => b.Id)
-                .Take(10)
-                .ToList();
+            var allKnownBooks = favorites.Concat(readingBooks).ToList();
+            
+            var authorIds = allKnownBooks.SelectMany(b => b.Authors).Select(a => a.Id).Distinct().ToList();
+            var genreIds = allKnownBooks.SelectMany(b => b.Genres).Select(g => g.Id).Distinct().ToList();
+            var tagIds = allKnownBooks.SelectMany(b => b.Tags).Select(t => t.Id).Distinct().ToList();
+            var excludeIds = allKnownBooks.Select(b => b.Id).Distinct().ToList();
+
+            var recommendations = await _repo.GetRecommendationsAsync(userId, authorIds, genreIds, tagIds, excludeIds);
+            
+            if (recommendations.Count == 0)
+            {
+                recommendations = await _repo.GetMostReadBooksAsync(15);
+                recommendations = recommendations.Where(b => !excludeIds.Contains(b.Id)).ToList();
+            }
+
+            return recommendations;
+        }
+
+        public async Task<List<Book>> GetMostReadAsync(int count, int? genreId = null, int? authorId = null)
+        {
+            return await _repo.GetMostReadBooksAsync(count, genreId, authorId);
         }
 
         public void DeleteFileIfExists(string? fileUrl)
@@ -91,7 +100,6 @@ namespace Library.Application.Services
     }
     catch
     {
-        // можно залогировать, но не падать
     }
 }
 

@@ -40,6 +40,49 @@ export function ProfilePage({ onBookClick, initialTab = 'favorites' }: ProfilePa
     }
   };
 
+  const formatLastOpened = (dateString: string) => {
+    try {
+      const date = new Date(dateString);
+      const now = new Date();
+      const diffInSeconds = Math.floor((now.getTime() - date.getTime()) / 1000);
+
+      if (diffInSeconds < 60) return 'Только что';
+      
+      const diffInMinutes = Math.floor(diffInSeconds / 60);
+      if (diffInMinutes < 60) {
+        return `${diffInMinutes} ${getPlural(diffInMinutes, ['минуту', 'минуты', 'минут'])} назад`;
+      }
+
+      const diffInHours = Math.floor(diffInMinutes / 60);
+      if (diffInHours < 24) {
+        return `${diffInHours} ${getPlural(diffInHours, ['час', 'часа', 'часов'])} назад`;
+      }
+
+      const diffInDays = Math.floor(diffInHours / 24);
+      if (diffInDays < 7) {
+        if (diffInDays === 1) return 'Вчера';
+        return `${diffInDays} ${getPlural(diffInDays, ['день', 'дня', 'дней'])} назад`;
+      }
+
+      return date.toLocaleDateString('ru-RU', {
+        day: 'numeric',
+        month: 'long',
+        year: 'numeric'
+      });
+    } catch (e) {
+      return dateString;
+    }
+  };
+
+  const getPlural = (n: number, forms: [string, string, string]) => {
+    const n1 = Math.abs(n) % 100;
+    const n2 = n1 % 10;
+    if (n1 > 10 && n1 < 20) return forms[2];
+    if (n2 > 1 && n2 < 5) return forms[1];
+    if (n2 === 1) return forms[0];
+    return forms[2];
+  };
+
   const handleRemoveFavorite = async (bookId: number) => {
     try {
       await api.users.removeFromFavorites(bookId);
@@ -181,7 +224,7 @@ export function ProfilePage({ onBookClick, initialTab = 'favorites' }: ProfilePa
                       </div>
                       <div className="flex items-center gap-1">
                         <Clock className="w-4 h-4" />
-                        <span>{item.lastOpened}</span>
+                        <span>{formatLastOpened(item.lastOpened)}</span>
                       </div>
                     </div>
                   </div>

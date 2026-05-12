@@ -63,8 +63,19 @@ export function BookCard({ book, onClick, onFavoriteToggle, isFavorite, showFavo
       </div>
 
       <div className="p-4">
-        <h3 className="font-semibold text-gray-900 dark:text-stone-100 line-clamp-2 mb-1">{book.title}</h3>
-        <p className="text-sm text-gray-600 dark:text-stone-400 line-clamp-1">{book.authors?.join(', ') || 'Unknown author'}</p>
+        <h3 className="font-semibold text-gray-900 dark:text-stone-100 line-clamp-2 mb-2">{book.title}</h3>
+        
+        <div className="space-y-1">
+          <div className="flex items-start gap-1 text-xs">
+            <span className="text-gray-500 dark:text-stone-500 font-medium whitespace-nowrap">Автор:</span>
+            <span className="text-gray-700 dark:text-stone-300 line-clamp-1">{book.authors?.join(', ') || 'Неизвестен'}</span>
+          </div>
+          
+          <div className="flex items-start gap-1 text-xs">
+            <span className="text-gray-500 dark:text-stone-500 font-medium whitespace-nowrap">Жанры:</span>
+            <span className="text-gray-700 dark:text-stone-300 line-clamp-1">{book.genres?.join(', ') || '—'}</span>
+          </div>
+        </div>
       </div>
     </div>
   );

@@ -107,27 +107,22 @@ public class GenreRepository : IGenreRepository
         foreach (var term in terms)
         {
             var t = term;
-
-            genresQuery = genresQuery.Where(b =>
-                EF.Functions.ILike(b.Name, $"%{t}%") ||
-                EF.Functions.TrigramsSimilarity(b.Name, t) > 0.3
-            );
+            genresQuery = genresQuery.Where(g => EF.Functions.ILike(g.Name, $"%{t}%"));
         }
 
-        return await genresQuery
-            .Select(b => new SearchProjection
-            {
-                Type = "book",
-                Id = b.Id,
-                Title = b.Name,
-
-                Score = terms.Sum(t =>
-                    EF.Functions.TrigramsSimilarity(b.Name, t)
-                ) + (EF.Functions.ILike(b.Name, $"%{query}%") ? 1 : 0)
-            })
-            .OrderByDescending(x => x.Score)
+        var results = await genresQuery
             .Take(10)
             .ToListAsync();
+
+        return results.Select(g => new SearchProjection
+        {
+            Type = "genre",
+            Id = g.Id,
+            Title = g.Name,
+            Score = g.Name.Contains(query, StringComparison.OrdinalIgnoreCase) ? 1.0 : 0.5
+        })
+        .OrderByDescending(x => x.Score)
+        .ToList();
     }
 
 }

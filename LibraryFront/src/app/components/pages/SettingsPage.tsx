@@ -1,11 +1,25 @@
-import React from 'react';
-import { User, Moon, Sun } from 'lucide-react';
+import React, { useState } from 'react';
+import { User, Moon, Sun, CreditCard, CheckCircle, Calendar } from 'lucide-react';
 import { useAuth } from '../../../contexts/AuthContext';
 import { useTheme } from '../../../contexts/ThemeContext';
+import { api } from '../../../services/api';
 
 export function SettingsPage() {
-  const { user } = useAuth();
+  const { user, getMe } = useAuth();
   const { theme, setTheme } = useTheme();
+  const [subscribing, setSubscribing] = useState(false);
+
+  const handleSubscribe = async () => {
+    setSubscribing(true);
+    try {
+      await api.users.updateSubscription(true);
+      await getMe();
+    } catch (error) {
+      console.error('Error subscribing:', error);
+    } finally {
+      setSubscribing(false);
+    }
+  };
 
   return (
     <div>
@@ -20,15 +34,72 @@ export function SettingsPage() {
             <p className="text-sm text-gray-500 dark:text-stone-500 mt-1 flex items-center gap-2">
               <span className={`w-2 h-2 rounded-full ${user?.role === 'admin' ? 'bg-amber-500' : 'bg-green-500'}`} />
               {user?.role === 'admin' ? 'Администратор' : 'Пользователь'}
+              {user?.isSubscribed && (
+                <span className="flex items-center gap-1 text-amber-600 font-bold ml-2">
+                  <CheckCircle className="w-4 h-4" />
+                  Подписка активна
+                </span>
+              )}
             </p>
           </div>
         </div>
       </div>
 
       <div className="bg-card rounded-lg shadow-sm border border-amber-200 dark:border-stone-700 p-6 space-y-8">
-        <h2 className="text-xl font-semibold text-gray-900 dark:text-stone-100 pb-4 border-b border-amber-100 dark:border-stone-800">Настройки приложения</h2>
+        <h2 className="text-xl font-semibold text-gray-900 dark:text-stone-100 pb-4 border-b border-amber-100 dark:border-stone-800">Настройки аккаунта</h2>
 
         <div className="space-y-6">
+          {/* Subscription Section */}
+          <div>
+            <label className="block text-sm font-bold text-gray-700 dark:text-stone-300 mb-4 uppercase tracking-wider">
+              Управление подпиской
+            </label>
+            <div className="bg-amber-50 dark:bg-stone-900/50 rounded-xl p-6 border border-amber-200 dark:border-stone-800">
+              {user?.isSubscribed ? (
+                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                  <div className="flex items-start gap-3">
+                    <div className="p-2 bg-amber-100 dark:bg-amber-900/20 rounded-lg">
+                      <CreditCard className="w-6 h-6 text-amber-600" />
+                    </div>
+                    <div>
+                      <h3 className="font-bold text-gray-900 dark:text-stone-100">Ваша подписка активна</h3>
+                      <p className="text-sm text-gray-600 dark:text-stone-400">Вам доступны все книги для чтения без ограничений.</p>
+                      {user.subscriptionExpiresAt && (
+                        <p className="text-xs text-amber-700 dark:text-amber-500 mt-2 flex items-center gap-1">
+                          <Calendar className="w-3 h-3" />
+                          Действует до: {new Date(user.subscriptionExpiresAt).toLocaleDateString()}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2 text-green-600 font-bold bg-green-50 dark:bg-green-900/20 px-4 py-2 rounded-lg">
+                    <CheckCircle className="w-5 h-5" />
+                    Оплачено
+                  </div>
+                </div>
+              ) : (
+                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                  <div className="flex items-start gap-3">
+                    <div className="p-2 bg-gray-100 dark:bg-stone-800 rounded-lg">
+                      <CreditCard className="w-6 h-6 text-gray-500" />
+                    </div>
+                    <div>
+                      <h3 className="font-bold text-gray-900 dark:text-stone-100">Подписка не оформлена</h3>
+                      <p className="text-sm text-gray-600 dark:text-stone-400">Оформите подписку, чтобы получить неограниченный доступ к чтению.</p>
+                    </div>
+                  </div>
+                  <button
+                    onClick={handleSubscribe}
+                    disabled={subscribing}
+                    className="px-6 py-2 bg-amber-600 hover:bg-amber-700 text-white font-bold rounded-lg transition-colors shadow-md disabled:opacity-50"
+                  >
+                    {subscribing ? 'Оформление...' : 'Оформить за 299₽/мес'}
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
+
           {/* Theme Section */}
           <div>
             <label className="block text-sm font-bold text-gray-700 dark:text-stone-300 mb-4 uppercase tracking-wider">

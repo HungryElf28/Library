@@ -3,6 +3,8 @@ export interface User {
   login: string;
   email: string;
   role: 'guest' | 'client' | 'admin';
+  isSubscribed?: boolean;
+  subscriptionExpiresAt?: string;
 }
 
 export interface Author {
@@ -33,6 +35,7 @@ export interface Book {
   tags: Tag[];
   averageRating?: number;
   reviewsCount?: number;
+  readCount?: number;
 }
 
 export interface BookListItem {
@@ -40,7 +43,9 @@ export interface BookListItem {
   title: string;
   coverFile?: string;
   authors?: string[];
+  genres?: string[];
   averageRating?: number;
+  readCount?: number;
 }
 
 export interface Review {
@@ -131,6 +136,7 @@ export interface BookQueryParams {
   searchTerm?: string;
   genreId?: number;
   authorId?: number;
+  tagId?: number;
   page?: number;
   pageSize?: number;
   sortBy?: 'Title' | 'Rate';

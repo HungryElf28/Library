@@ -1,5 +1,6 @@
-import React, { createContext, useContext, useState, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { ReaderSettings } from '../types';
+import { useTheme } from './ThemeContext';
 
 interface ReaderContextType {
   settings: ReaderSettings;
@@ -19,15 +20,24 @@ const SETTINGS_KEY = 'library_reader_settings';
 const ReaderContext = createContext<ReaderContextType | undefined>(undefined);
 
 export function ReaderProvider({ children }: { children: ReactNode }) {
+  const { theme: appTheme } = useTheme();
   const [settings, setSettings] = useState<ReaderSettings>(() => {
     const saved = localStorage.getItem(SETTINGS_KEY);
     return saved ? JSON.parse(saved) : defaultSettings;
   });
 
+  useEffect(() => {
+    if (settings.theme !== appTheme && (appTheme === 'light' || appTheme === 'dark')) {
+      updateSettings({ theme: appTheme });
+    }
+  }, [appTheme]);
+
   const updateSettings = (newSettings: Partial<ReaderSettings>) => {
-    const updated = { ...settings, ...newSettings };
-    setSettings(updated);
-    localStorage.setItem(SETTINGS_KEY, JSON.stringify(updated));
+    setSettings(prev => {
+      const updated = { ...prev, ...newSettings };
+      localStorage.setItem(SETTINGS_KEY, JSON.stringify(updated));
+      return updated;
+    });
   };
 
   return (

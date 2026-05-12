@@ -180,11 +180,11 @@ export function BookEditModal({ book, onClose, onSave }: BookEditModalProps) {
                       accept=".epub,application/epub+zip,.fb2,application/x-fictionbook+xml,.txt,text/plain,.rtf,application/rtf,.pdf,application/pdf,.mobi,application/x-mobipocket-ebook,.azw3,application/vnd.amazon.ebook"
                       onChange={(e) => setFormData({ ...formData, textFile: e.target.files?.[0] })}
                       required={!book}
-                      className="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-bold file:bg-amber-600 file:text-white hover:file:bg-amber-700 cursor-pointer"
+                      className="w-full text-sm text-gray-500 file:mr-4 file:py-2.5 file:px-6 file:rounded-full file:border-0 file:text-xs file:font-bold file:bg-amber-600 file:text-white hover:file:bg-amber-700 file:shadow-md hover:file:shadow-lg transition-all cursor-pointer"
                     />
-                  </div>
+                    </div>
 
-                  <div>
+                    <div>
                     <span className="block text-xs font-medium text-gray-500 dark:text-stone-400 mb-2">Обложка книги</span>
                     <div className="flex gap-4 items-start">
                       <div className="flex-1">
@@ -192,9 +192,8 @@ export function BookEditModal({ book, onClose, onSave }: BookEditModalProps) {
                           type="file"
                           accept="image/*"
                           onChange={(e) => setFormData({ ...formData, coverFile: e.target.files?.[0] })}
-                          className="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-bold file:bg-stone-800 file:text-white hover:file:bg-black cursor-pointer"
-                        />
-                      </div>
+                          className="w-full text-sm text-gray-500 file:mr-4 file:py-2.5 file:px-6 file:rounded-full file:border-0 file:text-xs file:font-bold file:bg-amber-600 file:text-white hover:file:bg-amber-700 file:shadow-md hover:file:shadow-lg transition-all cursor-pointer"
+                        />                      </div>
                       {coverPreview && (
                         <div className="w-20 h-28 bg-gray-200 rounded-lg overflow-hidden shadow-md flex-shrink-0 border border-white dark:border-stone-700">
                           <img

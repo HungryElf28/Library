@@ -13,6 +13,7 @@ namespace Library.Web.DTO.Books
         public string? Description { get; set; }
         public double AverageRating { get; set; }
         public int ReviewsCount { get; set; }
+        public int ReadCount { get; set; }
 
         public List<AuthorDto> Authors { get; set; } = new();
         public List<GenreDto> Genres { get; set; }

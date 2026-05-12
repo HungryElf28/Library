@@ -109,26 +109,22 @@ public class AuthorRepository : IAuthorRepository
         foreach (var term in terms)
         {
             var t = term;
-
-            authorsQuery = authorsQuery.Where(b =>
-                EF.Functions.ILike(b.Name, $"%{t}%") ||
-                EF.Functions.TrigramsSimilarity(b.Name, t) > 0.3
-            );
+            authorsQuery = authorsQuery.Where(a => EF.Functions.ILike(a.Name, $"%{t}%"));
         }
 
-        return await authorsQuery
-            .Select(b => new SearchProjection
-            {
-                Type = "book",
-                Id = b.Id,
-                Title = b.Name,
-
-                Score = terms.Sum(t =>
-                    EF.Functions.TrigramsSimilarity(b.Name, t)
-                ) + (EF.Functions.ILike(b.Name, $"%{query}%") ? 1 : 0)
-            })
-            .OrderByDescending(x => x.Score)
+        var results = await authorsQuery
             .Take(10)
             .ToListAsync();
+
+        return results.Select(a => new SearchProjection
+        {
+            Type = "author",
+            Id = a.Id,
+            Title = a.Name,
+            CoverFile = a.Photo,
+            Score = a.Name.Contains(query, StringComparison.OrdinalIgnoreCase) ? 1.0 : 0.5
+        })
+        .OrderByDescending(x => x.Score)
+        .ToList();
     }
 }

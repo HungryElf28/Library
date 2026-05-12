@@ -101,7 +101,7 @@ export function AuthorEditModal({ author, onClose, onSave }: AuthorEditModalProp
                 type="file"
                 accept="image/*"
                 onChange={(e) => setPhotoFile(e.target.files?.[0] || null)}
-                className="w-full px-3 py-2 border border-amber-300 dark:border-stone-600 bg-card text-gray-900 dark:text-stone-100 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500"
+                className="w-full text-sm text-gray-500 file:mr-4 file:py-2.5 file:px-6 file:rounded-full file:border-0 file:text-xs file:font-bold file:bg-amber-600 file:text-white hover:file:bg-amber-700 file:shadow-md hover:file:shadow-lg transition-all cursor-pointer"
               />
               {currentPhoto && !photoFile && (
                 <div className="mt-2">

@@ -13,7 +13,6 @@ namespace Library.Infrastructure.Mappers;
 
 public static class BookMapper
 {
-    // 🔽 EF → Domain
     public static Book ToDomain(EfBook ef)
     {
         var book = new Book(
@@ -23,7 +22,8 @@ public static class BookMapper
             ef.CoverFile,
             ef.Description,
             ef.Rating,
-            ef.Reviews.Count
+            ef.Reviews.Count,
+            ef.ReadCount
         );
 
         book.Authors.AddRange(

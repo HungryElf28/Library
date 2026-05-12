@@ -20,6 +20,7 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../../../contexts/AuthContext';
 import { useReader } from '../../../contexts/ReaderContext';
+import { useTheme } from '../../../contexts/ThemeContext';
 
 interface BookReaderPageProps {
   bookId: number;
@@ -159,6 +160,7 @@ function splitTextToPages(text: string, pageSize: number) {
 
 export function BookReaderPage({ bookId, onBack }: BookReaderPageProps) {
   const { user } = useAuth();
+  const { theme: appTheme, setTheme } = useTheme();
   const { settings, updateSettings } = useReader();
   const readerTopRef = useRef<HTMLDivElement | null>(null);
   const [container, setContainer] = useState<HTMLDivElement | null>(null);
@@ -612,15 +614,33 @@ export function BookReaderPage({ bookId, onBack }: BookReaderPageProps) {
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-stone-300 mb-3">Тема</label>
                 <div className="grid grid-cols-3 gap-2">
-                  <button onClick={() => updateSettings({ theme: 'light' })} className={`px-3 py-2 border rounded-lg text-sm flex items-center justify-center gap-2 ${settings.theme === 'light' ? 'border-amber-600 bg-amber-50 text-amber-900' : 'border-gray-300 hover:bg-gray-50 dark:border-stone-600 dark:hover:bg-stone-700'}`}>
+                  <button 
+                    onClick={() => {
+                      updateSettings({ theme: 'light' });
+                      setTheme('light');
+                    }} 
+                    className={`px-3 py-2 border rounded-lg text-sm flex items-center justify-center gap-2 ${settings.theme === 'light' ? 'border-amber-600 bg-amber-50 text-amber-900' : 'border-gray-300 hover:bg-gray-50 dark:border-stone-600 dark:hover:bg-stone-700'}`}
+                  >
                     <Sun className="w-4 h-4" />
                     Светлая
                   </button>
-                  <button onClick={() => updateSettings({ theme: 'dark' })} className={`px-3 py-2 border rounded-lg text-sm flex items-center justify-center gap-2 ${settings.theme === 'dark' ? 'border-amber-600 bg-amber-50 text-amber-900' : 'border-gray-300 hover:bg-gray-50 dark:border-stone-600 dark:hover:bg-stone-700'}`}>
+                  <button 
+                    onClick={() => {
+                      updateSettings({ theme: 'dark' });
+                      setTheme('dark');
+                    }} 
+                    className={`px-3 py-2 border rounded-lg text-sm flex items-center justify-center gap-2 ${settings.theme === 'dark' ? 'border-amber-600 bg-amber-50 text-amber-900' : 'border-gray-300 hover:bg-gray-50 dark:border-stone-600 dark:hover:bg-stone-700'}`}
+                  >
                     <Moon className="w-4 h-4" />
                     Темная
                   </button>
-                  <button onClick={() => updateSettings({ theme: 'sepia' })} className={`px-3 py-2 border rounded-lg text-sm flex items-center justify-center gap-2 ${settings.theme === 'sepia' ? 'border-amber-600 bg-amber-50 text-amber-900' : 'border-gray-300 hover:bg-gray-50 dark:border-stone-600 dark:hover:bg-stone-700'}`}>
+                  <button 
+                    onClick={() => {
+                      updateSettings({ theme: 'sepia' });
+                      setTheme('light');
+                    }} 
+                    className={`px-3 py-2 border rounded-lg text-sm flex items-center justify-center gap-2 ${settings.theme === 'sepia' ? 'border-amber-600 bg-amber-50 text-amber-900' : 'border-gray-300 hover:bg-gray-50 dark:border-stone-600 dark:hover:bg-stone-700'}`}
+                  >
                     <Type className="w-4 h-4" />
                     Сепия
                   </button>

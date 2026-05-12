@@ -1,12 +1,13 @@
 import React, { useState } from 'react';
-import { BookOpen, Loader } from 'lucide-react';
+import { BookOpen, Loader, ArrowLeft } from 'lucide-react';
 import { useAuth } from '../../../contexts/AuthContext';
 
 interface AuthPageProps {
   onSuccess: () => void;
+  onBack: () => void;
 }
 
-export function AuthPage({ onSuccess }: AuthPageProps) {
+export function AuthPage({ onSuccess, onBack }: AuthPageProps) {
   const { login, register } = useAuth();
   const [mode, setMode] = useState<'login' | 'register'>('login');
   const [loading, setLoading] = useState(false);
@@ -78,6 +79,14 @@ export function AuthPage({ onSuccess }: AuthPageProps) {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-amber-50 to-orange-100 dark:from-stone-900 dark:to-stone-800 px-4 relative">
+      <button
+        onClick={onBack}
+        className="absolute top-8 left-8 flex items-center gap-2 px-4 py-2 bg-card border border-amber-200 dark:border-stone-700 text-gray-700 dark:text-stone-300 rounded-lg hover:bg-amber-50 dark:hover:bg-stone-700 transition-colors shadow-sm"
+      >
+        <ArrowLeft className="w-5 h-5" />
+        <span>Назад в каталог</span>
+      </button>
+
       <div className="max-w-md w-full">
         <div className="text-center mb-8">
           <div className="flex items-center justify-center gap-3 mb-4">

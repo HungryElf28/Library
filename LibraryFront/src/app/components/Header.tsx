@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Search, BookOpen, User, LogOut, Heart, BookMarked, Settings, Sun, Moon } from 'lucide-react';
+import { Search, BookOpen, User, LogOut, Heart, BookMarked, Settings, Sun, Moon, Sparkles } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useTheme } from '../../contexts/ThemeContext';
 
@@ -32,7 +32,7 @@ export function Header({ onSearch, onNavigate, currentPage }: HeaderProps) {
         <div className="flex items-center justify-between h-16">
           <div className="flex items-center gap-8">
             <button
-              onClick={() => onNavigate('catalog')}
+              onClick={() => onNavigate('home')}
               className="flex items-center gap-2 hover:opacity-80 transition-opacity"
             >
               <BookOpen className="w-8 h-8 text-amber-600 dark:text-amber-500" />
@@ -40,6 +40,14 @@ export function Header({ onSearch, onNavigate, currentPage }: HeaderProps) {
             </button>
 
             <nav className="hidden md:flex items-center gap-6">
+              <button
+                onClick={() => onNavigate('home')}
+                className={`text-sm transition-colors ${
+                  currentPage === 'home' ? 'text-amber-600 dark:text-amber-500 font-medium' : 'text-gray-600 dark:text-stone-400 hover:text-gray-900 dark:hover:text-stone-200'
+                }`}
+              >
+                Главная
+              </button>
               <button
                 onClick={() => onNavigate('catalog')}
                 className={`text-sm transition-colors ${
@@ -74,6 +82,15 @@ export function Header({ onSearch, onNavigate, currentPage }: HeaderProps) {
                   >
                     Подборки
                   </button>
+                  <button
+                    onClick={() => onNavigate('recommendations')}
+                    className={`text-sm flex items-center gap-1 transition-colors ${
+                      currentPage === 'recommendations' ? 'text-amber-600 dark:text-amber-500 font-medium' : 'text-gray-600 dark:text-stone-400 hover:text-gray-900 dark:hover:text-stone-200'
+                    }`}
+                  >
+                    <Sparkles className="w-4 h-4" />
+                    Рекомендации
+                  </button>
                 </>
               )}
               {user?.role === 'admin' && (
@@ -99,15 +116,23 @@ export function Header({ onSearch, onNavigate, currentPage }: HeaderProps) {
             </button>
 
             <form onSubmit={handleSearch} className="hidden sm:block">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 dark:text-stone-500" />
-                <input
-                  type="text"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder="Поиск книг..."
-                  className="pl-10 pr-4 py-2 border border-amber-300 dark:border-stone-600 bg-card text-gray-900 dark:text-stone-100 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-amber-500 w-64"
-                />
+              <div className="flex items-center">
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 dark:text-stone-500" />
+                  <input
+                    type="text"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    placeholder="Поиск..."
+                    className="pl-10 pr-4 py-2 border border-amber-300 dark:border-stone-600 bg-card text-gray-900 dark:text-stone-100 rounded-l-lg text-sm focus:outline-none focus:ring-2 focus:ring-amber-500 w-48 lg:w-64 border-r-0"
+                  />
+                </div>
+                <button
+                  type="submit"
+                  className="px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white rounded-r-lg text-sm font-medium transition-colors border border-amber-600 focus:outline-none focus:ring-2 focus:ring-amber-500"
+                >
+                  Найти
+                </button>
               </div>
             </form>
 

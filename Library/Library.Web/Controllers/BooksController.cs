@@ -65,6 +65,7 @@ namespace Library.Web.Controllers
                 Description = book.Description,
                 AverageRating = book.AverageRating,
                 ReviewsCount = book.ReviewsCount,
+                ReadCount = book.ReadCount,
                 Authors = book.Authors.Select(a => new AuthorDto { Id = a.Id, Name = a.Name }).ToList(),
                 Genres = book.Genres.Select(g => new GenreDto { Id = g.Id, Name = g.Name }).ToList(),
                 Tags = book.Tags.Select(t => new TagDto { Id = t.Id, Name = t.Name }).ToList()
@@ -84,7 +85,24 @@ namespace Library.Web.Controllers
                 b.Id,
                 b.Title,
                 b.CoverFile,
-                Authors = b.Authors.Select(a => a.Name)
+                Authors = b.Authors.Select(a => a.Name).ToList(),
+                Genres = b.Genres.Select(g => g.Name).ToList()
+            }));
+        }
+
+        [HttpGet("most-read")]
+        public async Task<IActionResult> GetMostRead([FromQuery] int count = 10, [FromQuery] int? genreId = null, [FromQuery] int? authorId = null)
+        {
+            var books = await _service.GetMostReadAsync(count, genreId, authorId);
+            return Ok(books.Select(b => new
+            {
+                b.Id,
+                b.Title,
+                b.CoverFile,
+                Authors = b.Authors.Select(a => a.Name).ToList(),
+                Genres = b.Genres.Select(g => g.Name).ToList(),
+                b.AverageRating,
+                b.ReadCount
             }));
         }
 
@@ -168,6 +186,7 @@ namespace Library.Web.Controllers
                 query.SearchTerm,
                 query.GenreId,
                 query.AuthorId,
+                query.TagId,
                 page,
                 pageSize,
                 query.SortBy,
@@ -181,6 +200,7 @@ namespace Library.Web.Controllers
                     b.Title,
                     b.CoverFile,
                     Authors = b.Authors.Select(a => a.Name).ToList(),
+                    Genres = b.Genres.Select(g => g.Name).ToList(),
                     averageRating = b.AverageRating
                 }),
                 total,

@@ -3,6 +3,7 @@ import { AuthProvider, useAuth } from '../contexts/AuthContext';
 import { ReaderProvider } from '../contexts/ReaderContext';
 import { ThemeProvider } from '../contexts/ThemeContext';
 import { Header } from './components/Header';
+import { HomePage } from './components/pages/HomePage';
 import { CatalogPage } from './components/pages/CatalogPage';
 import { BookDetailsPage } from './components/pages/BookDetailsPage';
 import { BookReaderPage } from './components/pages/BookReaderPage';
@@ -12,8 +13,13 @@ import { AdminPage } from './components/pages/AdminPage';
 import { SearchResultsPage } from './components/pages/SearchResultsPage';
 import { SettingsPage } from './components/pages/SettingsPage';
 import { CollectionsPage } from './components/pages/CollectionsPage';
+import { RecommendationsPage } from './components/pages/RecommendationsPage';
+import { AuthorDetailsPage } from './components/pages/AuthorDetailsPage';
+import { GenreDetailsPage } from './components/pages/GenreDetailsPage';
+import { TagDetailsPage } from './components/pages/TagDetailsPage';
 
 type Page =
+  | { type: 'home' }
   | { type: 'catalog' }
   | { type: 'search'; query: string }
   | { type: 'book-details'; bookId: number }
@@ -23,14 +29,21 @@ type Page =
   | { type: 'reading' }
   | { type: 'favorites' }
   | { type: 'collections' }
+  | { type: 'recommendations' }
+  | { type: 'author-details'; authorId: number }
+  | { type: 'genre-details'; genreId: number }
+  | { type: 'tag-details'; tagId: number }
   | { type: 'admin' };
 
 function AppContent() {
   const { user, isLoading } = useAuth();
-  const [currentPage, setCurrentPage] = useState<Page>({ type: 'catalog' });
+  const [currentPage, setCurrentPage] = useState<Page>({ type: 'home' });
 
   const navigate = (page: string, params?: any) => {
     switch (page) {
+      case 'home':
+        setCurrentPage({ type: 'home' });
+        break;
       case 'catalog':
         setCurrentPage({ type: 'catalog' });
         break;
@@ -39,6 +52,15 @@ function AppContent() {
         break;
       case 'book-details':
         setCurrentPage({ type: 'book-details', bookId: params.bookId });
+        break;
+      case 'author-details':
+        setCurrentPage({ type: 'author-details', authorId: params.authorId });
+        break;
+      case 'genre-details':
+        setCurrentPage({ type: 'genre-details', genreId: params.genreId });
+        break;
+      case 'tag-details':
+        setCurrentPage({ type: 'tag-details', tagId: params.tagId });
         break;
       case 'reader':
         setCurrentPage({ type: 'reader', bookId: params.bookId });
@@ -57,6 +79,9 @@ function AppContent() {
         break;
       case 'collections':
         setCurrentPage({ type: 'collections' });
+        break;
+      case 'recommendations':
+        setCurrentPage({ type: 'recommendations' });
         break;
       case 'admin':
         setCurrentPage({ type: 'admin' });
@@ -82,7 +107,7 @@ function AppContent() {
   }
 
   if (currentPage.type === 'login') {
-    return <AuthPage onSuccess={() => navigate('catalog')} />;
+    return <AuthPage onSuccess={() => navigate('catalog')} onBack={() => navigate('catalog')} />;
   }
 
   if (currentPage.type === 'reader') {
@@ -103,18 +128,23 @@ function AppContent() {
       />
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {currentPage.type === 'catalog' && (
-          <CatalogPage
+        {currentPage.type === 'home' && (
+          <HomePage
             onBookClick={(bookId) => navigate('book-details', { bookId })}
           />
         )}
-
         {currentPage.type === 'search' && (
           <SearchResultsPage
             query={currentPage.query}
             onBookClick={(bookId) => navigate('book-details', { bookId })}
-            onAuthorClick={(authorId) => navigate('catalog')}
-            onGenreClick={(genreId) => navigate('catalog')}
+            onAuthorClick={(authorId) => navigate('author-details', { authorId })}
+            onGenreClick={(genreId) => navigate('genre-details', { genreId })}
+            onTagClick={(tagId) => navigate('tag-details', { tagId })}
+          />
+        )}
+        {currentPage.type === 'catalog' && (
+          <CatalogPage
+            onBookClick={(bookId) => navigate('book-details', { bookId })}
           />
         )}
 
@@ -122,8 +152,35 @@ function AppContent() {
           <BookDetailsPage
             bookId={currentPage.bookId}
             onStartReading={(bookId) => navigate('reader', { bookId })}
+            onAuthorClick={(authorId) => navigate('author-details', { authorId })}
+            onGenreClick={(genreId) => navigate('genre-details', { genreId })}
+            onTagClick={(tagId) => navigate('tag-details', { tagId })}
             onBack={() => navigate('catalog')}
             onNavigateToLogin={() => navigate('login')}
+          />
+        )}
+
+        {currentPage.type === 'author-details' && (
+          <AuthorDetailsPage
+            authorId={currentPage.authorId}
+            onBookClick={(bookId) => navigate('book-details', { bookId })}
+            onBack={() => navigate('catalog')}
+          />
+        )}
+
+        {currentPage.type === 'genre-details' && (
+          <GenreDetailsPage
+            genreId={currentPage.genreId}
+            onBookClick={(bookId) => navigate('book-details', { bookId })}
+            onBack={() => navigate('catalog')}
+          />
+        )}
+
+        {currentPage.type === 'tag-details' && (
+          <TagDetailsPage
+            tagId={currentPage.tagId}
+            onBookClick={(bookId) => navigate('book-details', { bookId })}
+            onBack={() => navigate('catalog')}
           />
         )}
 
@@ -145,6 +202,10 @@ function AppContent() {
 
         {currentPage.type === 'collections' && (
           <CollectionsPage onBookClick={(bookId) => navigate('book-details', { bookId })} />
+        )}
+
+        {currentPage.type === 'recommendations' && (
+          <RecommendationsPage onBookClick={(bookId) => navigate('book-details', { bookId })} />
         )}
 
         {currentPage.type === 'admin' && user?.role === 'admin' && <AdminPage />}

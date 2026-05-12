@@ -56,6 +56,7 @@ builder.Services.AddAuthorization();
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
+builder.Services.AddHealthChecks();
 
 var app = builder.Build();
 
@@ -63,6 +64,8 @@ app.UseCors(policy =>
     policy.AllowAnyOrigin()
           .AllowAnyMethod()
           .AllowAnyHeader());
+
+app.MapHealthChecks("/health");
 
 if (app.Environment.IsDevelopment())
 {
@@ -111,7 +114,10 @@ using (var scope = app.Services.CreateScope())
     {
         try
         {
-            logger.LogInformation("Attempt {Attempt} of {MaxRetries}: Applying database migrations...", i + 1, maxRetries);
+            logger.LogInformation("Attempt {Attempt} of {MaxRetries}: Ensuring pg_trgm extension and applying database migrations...", i + 1, maxRetries);
+            
+            dbContext.Database.ExecuteSqlRaw("CREATE EXTENSION IF NOT EXISTS pg_trgm;");
+            
             dbContext.Database.Migrate();
             logger.LogInformation("Database migrations applied successfully.");
 

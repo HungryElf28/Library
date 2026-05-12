@@ -16,5 +16,6 @@ namespace Library.Domain.Interfaces
         Task<bool> ExistsByNameAsync(string name);
         Task UpdateAsync(Tag newTag);
         Task DeleteAsync(int id);
+        Task<List<SearchProjection>> SearchAsync(string query);
     }
 }

@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { BookListItem, Author, Genre } from '../../../types';
+import { BookListItem, SearchProjection } from '../../../types';
 import { api } from '../../../services/api';
 import { BookCard } from '../BookCard';
-import { Loader, Search, User as UserIcon, Tag } from 'lucide-react';
+import { Loader, Search, User as UserIcon, Tag, Book as BookIcon, Hash } from 'lucide-react';
 import { useAuth } from '../../../contexts/AuthContext';
 
 interface SearchResultsPageProps {
@@ -10,13 +10,12 @@ interface SearchResultsPageProps {
   onBookClick: (bookId: number) => void;
   onAuthorClick?: (authorId: number) => void;
   onGenreClick?: (genreId: number) => void;
+  onTagClick?: (tagId: number) => void;
 }
 
-export function SearchResultsPage({ query, onBookClick, onAuthorClick, onGenreClick }: SearchResultsPageProps) {
+export function SearchResultsPage({ query, onBookClick, onAuthorClick, onGenreClick, onTagClick }: SearchResultsPageProps) {
   const { user } = useAuth();
-  const [books, setBooks] = useState<BookListItem[]>([]);
-  const [authors, setAuthors] = useState<Author[]>([]);
-  const [genres, setGenres] = useState<Genre[]>([]);
+  const [results, setResults] = useState<SearchProjection[]>([]);
   const [favorites, setFavorites] = useState<number[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -30,10 +29,8 @@ export function SearchResultsPage({ query, onBookClick, onAuthorClick, onGenreCl
   const performSearch = async () => {
     setLoading(true);
     try {
-      const results = await api.search.search(query);
-      setBooks(results.books);
-      setAuthors(results.authors);
-      setGenres(results.genres);
+      const data = await api.search.search(query);
+      setResults(data);
     } catch (error) {
       console.error('Error performing search:', error);
     } finally {
@@ -44,7 +41,7 @@ export function SearchResultsPage({ query, onBookClick, onAuthorClick, onGenreCl
   const loadFavorites = async () => {
     try {
       const data = await api.users.getFavorites();
-      setFavorites(data.map(book => book.id));
+      setFavorites(data.items.map(book => book.id));
     } catch (error) {
       console.error('Error loading favorites:', error);
     }
@@ -74,7 +71,10 @@ export function SearchResultsPage({ query, onBookClick, onAuthorClick, onGenreCl
     );
   }
 
-  const totalResults = books.length + authors.length + genres.length;
+  const books = results.filter(r => r.type === 'book');
+  const authors = results.filter(r => r.type === 'author');
+  const genres = results.filter(r => r.type === 'genre');
+  const tags = results.filter(r => r.type === 'tag');
 
   return (
     <div>
@@ -86,11 +86,11 @@ export function SearchResultsPage({ query, onBookClick, onAuthorClick, onGenreCl
           </h1>
         </div>
         <p className="text-gray-600 dark:text-stone-400">
-          Найдено результатов: {totalResults}
+          Найдено результатов: {results.length}
         </p>
       </div>
 
-      {totalResults === 0 ? (
+      {results.length === 0 ? (
         <div className="text-center py-20">
           <Search className="w-16 h-16 text-gray-300 dark:text-stone-600 mx-auto mb-4" />
           <p className="text-gray-600 dark:text-stone-400">По вашему запросу ничего не найдено</p>
@@ -99,18 +99,25 @@ export function SearchResultsPage({ query, onBookClick, onAuthorClick, onGenreCl
           </p>
         </div>
       ) : (
-        <div className="space-y-8">
+        <div className="space-y-12">
           {books.length > 0 && (
             <div>
-              <h2 className="text-xl font-semibold text-gray-900 dark:text-stone-100 mb-4 flex items-center gap-2">
-                <Tag className="w-5 h-5" />
+              <h2 className="text-xl font-bold text-gray-900 dark:text-stone-100 mb-6 flex items-center gap-2 uppercase tracking-wider">
+                <BookIcon className="w-5 h-5 text-amber-600" />
                 Книги ({books.length})
               </h2>
               <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 md:gap-6">
                 {books.map((book) => (
                   <BookCard
                     key={book.id}
-                    book={book}
+                    book={{
+                      id: book.id,
+                      title: book.title,
+                      coverFile: (book as any).coverFile || '',
+                      authors: (book as any).authorNames || [],
+                      genres: (book as any).genreNames || [],
+                      averageRating: (book as any).averageRating || 0
+                    } as any}
                     onClick={() => onBookClick(book.id)}
                     onFavoriteToggle={handleFavoriteToggle}
                     isFavorite={favorites.includes(book.id)}
@@ -123,8 +130,8 @@ export function SearchResultsPage({ query, onBookClick, onAuthorClick, onGenreCl
 
           {authors.length > 0 && (
             <div>
-              <h2 className="text-xl font-semibold text-gray-900 dark:text-stone-100 mb-4 flex items-center gap-2">
-                <UserIcon className="w-5 h-5" />
+              <h2 className="text-xl font-bold text-gray-900 dark:text-stone-100 mb-6 flex items-center gap-2 uppercase tracking-wider">
+                <UserIcon className="w-5 h-5 text-amber-600" />
                 Авторы ({authors.length})
               </h2>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -132,37 +139,56 @@ export function SearchResultsPage({ query, onBookClick, onAuthorClick, onGenreCl
                   <div
                     key={author.id}
                     onClick={() => onAuthorClick?.(author.id)}
-                    className="p-4 bg-card border border-amber-200 dark:border-stone-700 rounded-lg hover:shadow-md transition-shadow cursor-pointer"
+                    className="p-4 bg-card border border-amber-200 dark:border-stone-700 rounded-xl hover:shadow-lg hover:border-amber-400 transition-all cursor-pointer group"
                   >
-                    <h3 className="font-semibold text-gray-900 dark:text-stone-100 mb-2">{author.name}</h3>
-                    {author.bio && (
-                      <p className="text-sm text-gray-600 dark:text-stone-400 line-clamp-2">{author.bio}</p>
-                    )}
+                    <h3 className="font-bold text-gray-900 dark:text-stone-100 group-hover:text-amber-600 transition-colors">{author.title}</h3>
                   </div>
                 ))}
               </div>
             </div>
           )}
 
-          {genres.length > 0 && (
-            <div>
-              <h2 className="text-xl font-semibold text-gray-900 dark:text-stone-100 mb-4 flex items-center gap-2">
-                <Tag className="w-5 h-5" />
-                Жанры ({genres.length})
-              </h2>
-              <div className="flex flex-wrap gap-3">
-                {genres.map((genre) => (
-                  <button
-                    key={genre.id}
-                    onClick={() => onGenreClick?.(genre.id)}
-                    className="px-4 py-2 bg-amber-50 dark:bg-amber-900/30 text-amber-900 dark:text-amber-200 border border-amber-200 dark:border-amber-700 rounded-lg hover:bg-amber-100 dark:hover:bg-amber-900/50 transition-colors"
-                  >
-                    {genre.name}
-                  </button>
-                ))}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            {genres.length > 0 && (
+              <div>
+                <h2 className="text-xl font-bold text-gray-900 dark:text-stone-100 mb-6 flex items-center gap-2 uppercase tracking-wider">
+                  <Tag className="w-5 h-5 text-amber-600" />
+                  Жанры ({genres.length})
+                </h2>
+                <div className="flex flex-wrap gap-3">
+                  {genres.map((genre) => (
+                    <button
+                      key={genre.id}
+                      onClick={() => onGenreClick?.(genre.id)}
+                      className="px-4 py-2 bg-amber-50 dark:bg-amber-900/30 text-amber-900 dark:text-amber-200 border border-amber-200 dark:border-amber-700 rounded-xl hover:bg-amber-600 hover:text-white hover:border-amber-600 transition-all font-medium"
+                    >
+                      {genre.title}
+                    </button>
+                  ))}
+                </div>
               </div>
-            </div>
-          )}
+            )}
+
+            {tags.length > 0 && (
+              <div>
+                <h2 className="text-xl font-bold text-gray-900 dark:text-stone-100 mb-6 flex items-center gap-2 uppercase tracking-wider">
+                  <Hash className="w-5 h-5 text-amber-600" />
+                  Теги ({tags.length})
+                </h2>
+                <div className="flex flex-wrap gap-3">
+                  {tags.map((tag) => (
+                    <button
+                      key={tag.id}
+                      onClick={() => onTagClick?.(tag.id)}
+                      className="px-4 py-2 bg-stone-100 dark:bg-stone-800 text-stone-700 dark:text-stone-300 border border-stone-200 dark:border-stone-700 rounded-xl hover:bg-stone-700 hover:text-white hover:border-stone-700 transition-all font-medium"
+                    >
+                      #{tag.title}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
         </div>
       )}
     </div>

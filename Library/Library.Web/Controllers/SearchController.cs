@@ -24,5 +24,12 @@ namespace Library.Web.Controllers
             var result = await _service.GlobalSearchAsync(query);
             return Ok(result);
         }
+
+        [HttpGet("suggestions")]
+        public async Task<IActionResult> GetSuggestions(string query)
+        {
+            var result = await _service.GetSearchSuggestionsAsync(query);
+            return Ok(result);
+        }
     }
 }

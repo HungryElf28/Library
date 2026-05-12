@@ -17,11 +17,12 @@ namespace Library.Domain.Entities
         public string? Description { get; private set; }
         public double AverageRating { get; private set; }
         public int ReviewsCount { get; private set; }
+        public int ReadCount { get; private set; }
         public List<Author> Authors { get; private set; } = new();
         public List<Genre> Genres { get; private set; } = new();
         public List<Tag> Tags { get; private set; } = new();
 
-        public Book(int id, string title, string textFile, string? coverFile, string? description, double averageRating = 0, int reviewsCount = 0)
+        public Book(int id, string title, string textFile, string? coverFile, string? description, double averageRating = 0, int reviewsCount = 0, int readCount = 0)
         {
             Id = id;
             Title = title;
@@ -30,6 +31,7 @@ namespace Library.Domain.Entities
             Description = description;
             AverageRating = averageRating;
             ReviewsCount = reviewsCount;
+            ReadCount = readCount;
         }
 
         public void AddAuthor(Author author)

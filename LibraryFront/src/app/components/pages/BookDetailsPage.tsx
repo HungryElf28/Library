@@ -9,11 +9,22 @@ import { API_BASE } from '../../../config';
 interface BookDetailsPageProps {
   bookId: number;
   onStartReading: (bookId: number) => void;
+  onAuthorClick?: (authorId: number) => void;
+  onGenreClick?: (genreId: number) => void;
+  onTagClick?: (tagId: number) => void;
   onBack: () => void;
   onNavigateToLogin?: () => void;
 }
 
-export function BookDetailsPage({ bookId, onStartReading, onBack, onNavigateToLogin }: BookDetailsPageProps) {
+export function BookDetailsPage({ 
+  bookId, 
+  onStartReading, 
+  onAuthorClick,
+  onGenreClick,
+  onTagClick,
+  onBack, 
+  onNavigateToLogin 
+}: BookDetailsPageProps) {
   const { user } = useAuth();
   const [book, setBook] = useState<Book | null>(null);
   const [reviews, setReviews] = useState<Review[]>([]);
@@ -158,6 +169,15 @@ export function BookDetailsPage({ bookId, onStartReading, onBack, onNavigateToLo
       }
       return;
     }
+
+    if (!user.isSubscribed) {
+      if (confirm('Для чтения книг необходима активная подписка. Перейти к оформлению?')) {
+        onBack();
+        alert('Пожалуйста, оформите подписку в профиле (Настройки), чтобы читать книги.');
+      }
+      return;
+    }
+
     onStartReading(bookId);
   };
 
@@ -265,9 +285,19 @@ export function BookDetailsPage({ bookId, onStartReading, onBack, onNavigateToLo
           <div className="md:col-span-2 space-y-6">
             <div>
               <h1 className="text-3xl font-bold text-gray-900 dark:text-stone-100 mb-2">{book.title}</h1>
-              <p className="text-lg text-gray-600 dark:text-stone-400 mb-4">
-                {book.authors.map(a => a.name).join(', ')}
-              </p>
+              <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-lg text-gray-600 dark:text-stone-400 mb-4">
+                {book.authors.map((a, i) => (
+                    <React.Fragment key={a.id}>
+                        <button 
+                            onClick={() => onAuthorClick?.(a.id)}
+                            className="hover:text-amber-600 hover:underline transition-colors text-left"
+                        >
+                            {a.name}
+                        </button>
+                        {i < book.authors.length - 1 && <span>,</span>}
+                    </React.Fragment>
+                ))}
+              </div>
 
               {(book.reviewsCount ?? 0) > 0 && (
                 <div className="flex items-center gap-6">
@@ -287,14 +317,22 @@ export function BookDetailsPage({ bookId, onStartReading, onBack, onNavigateToLo
 
             <div className="flex flex-wrap gap-2">
               {book.genres.map(genre => (
-                <span key={genre.id} className="px-3 py-1 bg-amber-50 dark:bg-amber-900/30 text-amber-900 dark:text-amber-200 rounded-full text-sm">
+                <button 
+                    key={genre.id} 
+                    onClick={() => onGenreClick?.(genre.id)}
+                    className="px-3 py-1 bg-amber-50 dark:bg-amber-900/30 text-amber-900 dark:text-amber-200 rounded-full text-sm hover:bg-amber-100 dark:hover:bg-amber-900/50 transition-colors"
+                >
                   {genre.name}
-                </span>
+                </button>
               ))}
               {book.tags.map(tag => (
-                <span key={tag.id} className="px-3 py-1 bg-gray-100 dark:bg-stone-700 text-gray-700 dark:text-stone-300 rounded-full text-sm">
+                <button 
+                    key={tag.id} 
+                    onClick={() => onTagClick?.(tag.id)}
+                    className="px-3 py-1 bg-gray-100 dark:bg-stone-700 text-gray-700 dark:text-stone-300 rounded-full text-sm hover:bg-gray-200 dark:hover:bg-stone-600 transition-colors"
+                >
                   {tag.name}
-                </span>
+                </button>
               ))}
             </div>
 

@@ -95,4 +95,33 @@ public class TagRepository : ITagRepository
 
         await _context.SaveChangesAsync();
     }
+
+    public async Task<List<SearchProjection>> SearchAsync(string query)
+    {
+        var terms = query
+            .ToLower()
+            .Split(' ', StringSplitOptions.RemoveEmptyEntries);
+
+        var tagsQuery = _context.Tags.AsQueryable();
+
+        foreach (var term in terms)
+        {
+            var t = term;
+            tagsQuery = tagsQuery.Where(tag => EF.Functions.ILike(tag.Name, $"%{t}%"));
+        }
+
+        var results = await tagsQuery
+            .Take(10)
+            .ToListAsync();
+
+        return results.Select(tag => new SearchProjection
+        {
+            Type = "tag",
+            Id = tag.Id,
+            Title = tag.Name,
+            Score = tag.Name.Contains(query, StringComparison.OrdinalIgnoreCase) ? 1.0 : 0.5
+        })
+        .OrderByDescending(x => x.Score)
+        .ToList();
+    }
 }

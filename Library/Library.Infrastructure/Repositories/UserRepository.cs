@@ -168,11 +168,16 @@ public class UserRepository : IUserRepository
             };
 
             _context.ReadingBooks.Add(entity);
+
+            var book = await _context.Books.FindAsync(bookId);
+            if (book != null)
+            {
+                book.ReadCount++;
+            }
         }
         else
         {
             entity.Page = page;
-            // Only update TotalPages if we got a positive value
             if (totalPages > 0)
             {
                 entity.TotalPages = totalPages;
