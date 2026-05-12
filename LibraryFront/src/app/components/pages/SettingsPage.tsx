@@ -5,17 +5,17 @@ import { useTheme } from '../../../contexts/ThemeContext';
 import { api } from '../../../services/api';
 
 export function SettingsPage() {
-  const { user, getMe } = useAuth();
+  const { user, refreshUser } = useAuth();
   const { theme, setTheme } = useTheme();
   const [subscribing, setSubscribing] = useState(false);
 
-  const handleSubscribe = async () => {
+  const handleToggleSubscription = async (isSubscribed: boolean) => {
     setSubscribing(true);
     try {
-      await api.users.updateSubscription(true);
-      await getMe();
+      await api.users.updateSubscription(isSubscribed);
+      await refreshUser();
     } catch (error) {
-      console.error('Error subscribing:', error);
+      console.error('Error updating subscription:', error);
     } finally {
       setSubscribing(false);
     }
@@ -72,9 +72,18 @@ export function SettingsPage() {
                       )}
                     </div>
                   </div>
-                  <div className="flex items-center gap-2 text-green-600 font-bold bg-green-50 dark:bg-green-900/20 px-4 py-2 rounded-lg">
-                    <CheckCircle className="w-5 h-5" />
-                    Оплачено
+                  <div className="flex items-center gap-4">
+                    <div className="flex items-center gap-2 text-green-600 font-bold bg-green-50 dark:bg-green-900/20 px-4 py-2 rounded-lg">
+                      <CheckCircle className="w-5 h-5" />
+                      Оплачено
+                    </div>
+                    <button
+                      onClick={() => handleToggleSubscription(false)}
+                      disabled={subscribing}
+                      className="text-sm text-red-600 hover:text-red-700 font-medium underline underline-offset-4 disabled:opacity-50"
+                    >
+                      {subscribing ? 'Отмена...' : 'Отменить подписку'}
+                    </button>
                   </div>
                 </div>
               ) : (
@@ -89,7 +98,7 @@ export function SettingsPage() {
                     </div>
                   </div>
                   <button
-                    onClick={handleSubscribe}
+                    onClick={() => handleToggleSubscription(true)}
                     disabled={subscribing}
                     className="px-6 py-2 bg-amber-600 hover:bg-amber-700 text-white font-bold rounded-lg transition-colors shadow-md disabled:opacity-50"
                   >

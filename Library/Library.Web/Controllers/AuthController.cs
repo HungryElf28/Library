@@ -34,7 +34,9 @@ namespace Library.Web.Controllers
                         id = result.user.Id,
                         login = result.user.Login,
                         email = result.user.Email,
-                        role = result.user.RoleName.ToLower() == "admin" ? "admin" : "client"
+                        role = result.user.RoleName.ToLower() == "admin" ? "admin" : "client",
+                        isSubscribed = result.user.IsSubscribed,
+                        subscriptionExpiresAt = result.user.SubscriptionExpiresAt
                     }
                 });
             }
@@ -61,7 +63,9 @@ namespace Library.Web.Controllers
                     id = auth.user.Id,
                     login = auth.user.Login,
                     email = auth.user.Email,
-                    role = auth.user.RoleName.ToLower() == "admin" ? "admin" : "client"
+                    role = auth.user.RoleName.ToLower() == "admin" ? "admin" : "client",
+                    isSubscribed = auth.user.IsSubscribed,
+                    subscriptionExpiresAt = auth.user.SubscriptionExpiresAt
                 }
             });
         }
@@ -79,7 +83,9 @@ namespace Library.Web.Controllers
                 id = user.Id,
                 login = user.Login,
                 email = user.Email,
-                role = user.RoleName.ToLower() == "admin" ? "admin" : "client"
+                role = user.RoleName.ToLower() == "admin" ? "admin" : "client",
+                isSubscribed = user.IsSubscribed,
+                subscriptionExpiresAt = user.SubscriptionExpiresAt
             });
         }
     }

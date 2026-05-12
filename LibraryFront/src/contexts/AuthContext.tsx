@@ -7,6 +7,7 @@ interface AuthContextType {
   login: (data: LoginDto) => Promise<void>;
   register: (data: RegisterDto) => Promise<void>;
   logout: () => Promise<void>;
+  refreshUser: () => Promise<void>;
   isLoading: boolean;
 }
 
@@ -16,13 +17,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
+  const refreshUser = async () => {
+    try {
+      const currentUser = await api.auth.getMe();
+      setUser(currentUser);
+    } catch (error) {
+      console.error('Failed to refresh user:', error);
+    }
+  };
+
   useEffect(() => {
     const initAuth = async () => {
       const token = api.auth.getToken();
       if (token) {
         try {
-          const currentUser = await api.auth.getMe();
-          setUser(currentUser);
+          await refreshUser();
         } catch (error) {
           console.error('Failed to restore session:', error);
           await api.auth.logout();
@@ -50,7 +59,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   return (
-    <AuthContext.Provider value={{ user, login, register, logout, isLoading }}>
+    <AuthContext.Provider value={{ user, login, register, logout, refreshUser, isLoading }}>
       {children}
     </AuthContext.Provider>
   );
