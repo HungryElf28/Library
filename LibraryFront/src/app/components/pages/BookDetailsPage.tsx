@@ -100,7 +100,6 @@ export function BookDetailsPage({
     if (existingUserReview) {
       setUserReview({ rate: existingUserReview.rate, text: existingUserReview.text || '' });
       setShowReviewForm(true);
-      // Scroll to form
       setTimeout(() => {
           const form = document.getElementById('review-form');
           form?.scrollIntoView({ behavior: 'smooth', block: 'center' });

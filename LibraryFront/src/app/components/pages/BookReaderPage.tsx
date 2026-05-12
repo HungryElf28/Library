@@ -170,6 +170,7 @@ export function BookReaderPage({ bookId, onBack }: BookReaderPageProps) {
 
   const [book, setBook] = useState<Book | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
+  const [pageInput, setPageInput] = useState('1');
   const [bookmarks, setBookmarks] = useState<Bookmark[]>([]);
   const [showSettings, setShowSettings] = useState(false);
   const [showBookmarks, setShowBookmarks] = useState(false);
@@ -191,11 +192,13 @@ export function BookReaderPage({ bookId, onBack }: BookReaderPageProps) {
   const totalPages = canNavigateText ? Math.max(1, textPages.length) : Math.max(1, epubTotalPages);
 
   useEffect(() => {
+    setPageInput(currentPage.toString());
+  }, [currentPage]);
+
+  useEffect(() => {
     if (rawText) {
       const pages = splitTextToPages(rawText, settings.pageSize);
       setTextPages(pages);
-      // Try to stay on the same relative position
-      // (very rough approximation)
     }
   }, [settings.pageSize]);
 
@@ -260,7 +263,6 @@ export function BookReaderPage({ bookId, onBack }: BookReaderPageProps) {
       setEpubReady(true);
       applyEpubTheme();
       
-      // If we have a saved page, try to jump to it once
       if (initialLoadRef.current && currentPage > 1) {
         console.log('EPUB: Jumping to initial page:', currentPage);
         initialLoadRef.current = false;
@@ -286,7 +288,6 @@ export function BookReaderPage({ bookId, onBack }: BookReaderPageProps) {
       setEpubTotalPages(total);
       console.log('EPUB: Locations generated, total:', total);
       
-      // Auto-save progress once we know total pages
       if (book && user && user.role !== 'guest') {
         api.users.updateReadingProgress(bookId, currentPage, total);
       }
@@ -322,7 +323,6 @@ export function BookReaderPage({ bookId, onBack }: BookReaderPageProps) {
 
   useEffect(() => {
     return () => {
-      // Save progress on unmount - ONLY if we have total pages
       if (book && canNavigate && totalPages > 0) {
         api.users.updateReadingProgress(bookId, currentPage, totalPages);
       }
@@ -374,7 +374,6 @@ export function BookReaderPage({ bookId, onBack }: BookReaderPageProps) {
           console.error('Error loading progress:', err);
         }
       } else {
-        // Guest progress from localStorage
         const savedProgress = JSON.parse(localStorage.getItem('library_reading_progress') || '{}');
         if (savedProgress[bookId]) {
           setCurrentPage(savedProgress[bookId].page || 1);
@@ -464,15 +463,46 @@ export function BookReaderPage({ bookId, onBack }: BookReaderPageProps) {
     }
   };
 
-  const handleGoToBookmark = (page: number) => {
-    setCurrentPage(page);
-    setShowBookmarks(false);
-    scrollReaderToTop();
+  const goToPage = (page: number) => {
+    const targetPage = Math.max(1, Math.min(page, totalPages));
+    setCurrentPage(targetPage);
+    
+    if (canNavigateText) {
+      scrollReaderToTop();
+    }
 
     if (canNavigateEpub && epubBookRef.current && epubRenditionRef.current) {
-      const cfi = epubBookRef.current.locations.cfiFromLocation(Math.max(0, page - 1));
-      epubRenditionRef.current.display(cfi);
+      try {
+        if (epubBookRef.current.locations.length() > 0) {
+          const cfi = epubBookRef.current.locations.cfiFromLocation(Math.max(0, targetPage - 1));
+          if (cfi) {
+            epubRenditionRef.current.display(cfi);
+          }
+        }
+      } catch (err) {
+        console.error('Error navigating to page:', err);
+      }
     }
+  };
+
+  const handlePageInputBlur = () => {
+    const val = parseInt(pageInput);
+    if (!isNaN(val)) {
+      goToPage(val);
+    } else {
+      setPageInput(currentPage.toString());
+    }
+  };
+
+  const handlePageInputKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      (e.target as HTMLInputElement).blur();
+    }
+  };
+
+  const handleGoToBookmark = (page: number) => {
+    goToPage(page);
+    setShowBookmarks(false);
   };
 
   const nextPage = () => {
@@ -812,8 +842,18 @@ export function BookReaderPage({ bookId, onBack }: BookReaderPageProps) {
               <span className="hidden sm:inline">Назад</span>
             </button>
 
-            <div className={`text-sm ${mutedTextClass}`}>
-              <span className="font-medium">{currentPage}</span> / {epubTotalPages > 0 || canNavigateText ? totalPages : '...'}
+            <div className={`flex items-center gap-1 text-sm ${mutedTextClass}`}>
+              <input
+                type="text"
+                value={pageInput}
+                onChange={(e) => setPageInput(e.target.value)}
+                onBlur={handlePageInputBlur}
+                onKeyDown={handlePageInputKeyDown}
+                className="w-12 px-1 text-center font-bold bg-transparent border-b border-transparent focus:border-amber-500 focus:outline-none focus:bg-amber-50/50 dark:focus:bg-stone-800/50 rounded-sm transition-all"
+                title="Введите номер страницы и нажмите Enter"
+              />
+              <span className="opacity-70">/</span>
+              <span>{epubTotalPages > 0 || canNavigateText ? totalPages : '...'}</span>
             </div>
 
             <button onClick={nextPage} disabled={!canNavigateEpub && currentPage === totalPages} className={`flex items-center gap-2 px-4 py-2 border rounded-lg disabled:opacity-50 disabled:cursor-not-allowed ${navButtonClass}`}>

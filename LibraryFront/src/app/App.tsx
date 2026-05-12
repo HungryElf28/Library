@@ -38,54 +38,74 @@ type Page =
 function AppContent() {
   const { user, isLoading } = useAuth();
   const [currentPage, setCurrentPage] = useState<Page>({ type: 'home' });
+  const [history, setHistory] = useState<Page[]>([]);
 
-  const navigate = (page: string, params?: any) => {
+  const navigate = (page: string, params?: any, addToHistory = true) => {
+    let nextPage: Page;
     switch (page) {
       case 'home':
-        setCurrentPage({ type: 'home' });
+        nextPage = { type: 'home' };
         break;
       case 'catalog':
-        setCurrentPage({ type: 'catalog' });
+        nextPage = { type: 'catalog' };
         break;
       case 'search':
-        setCurrentPage({ type: 'search', query: params.query });
+        nextPage = { type: 'search', query: params.query };
         break;
       case 'book-details':
-        setCurrentPage({ type: 'book-details', bookId: params.bookId });
+        nextPage = { type: 'book-details', bookId: params.bookId };
         break;
       case 'author-details':
-        setCurrentPage({ type: 'author-details', authorId: params.authorId });
+        nextPage = { type: 'author-details', authorId: params.authorId };
         break;
       case 'genre-details':
-        setCurrentPage({ type: 'genre-details', genreId: params.genreId });
+        nextPage = { type: 'genre-details', genreId: params.genreId };
         break;
       case 'tag-details':
-        setCurrentPage({ type: 'tag-details', tagId: params.tagId });
+        nextPage = { type: 'tag-details', tagId: params.tagId };
         break;
       case 'reader':
-        setCurrentPage({ type: 'reader', bookId: params.bookId });
+        nextPage = { type: 'reader', bookId: params.bookId };
         break;
       case 'login':
-        setCurrentPage({ type: 'login' });
+        nextPage = { type: 'login' };
         break;
       case 'profile':
-        setCurrentPage({ type: 'profile' });
+        nextPage = { type: 'profile' };
         break;
       case 'reading':
-        setCurrentPage({ type: 'reading' });
+        nextPage = { type: 'reading' };
         break;
       case 'favorites':
-        setCurrentPage({ type: 'favorites' });
+        nextPage = { type: 'favorites' };
         break;
       case 'collections':
-        setCurrentPage({ type: 'collections' });
+        nextPage = { type: 'collections' };
         break;
       case 'recommendations':
-        setCurrentPage({ type: 'recommendations' });
+        nextPage = { type: 'recommendations' };
         break;
       case 'admin':
-        setCurrentPage({ type: 'admin' });
+        nextPage = { type: 'admin' };
         break;
+      default:
+        return;
+    }
+
+    if (addToHistory && JSON.stringify(currentPage) !== JSON.stringify(nextPage)) {
+      setHistory(prev => [...prev, currentPage]);
+    }
+    setCurrentPage(nextPage);
+  };
+
+  const goBack = () => {
+    if (history.length > 0) {
+      const newHistory = [...history];
+      const prevPage = newHistory.pop()!;
+      setHistory(newHistory);
+      setCurrentPage(prevPage);
+    } else {
+      setCurrentPage({ type: 'home' });
     }
   };
 
@@ -107,14 +127,14 @@ function AppContent() {
   }
 
   if (currentPage.type === 'login') {
-    return <AuthPage onSuccess={() => navigate('catalog')} onBack={() => navigate('catalog')} />;
+    return <AuthPage onSuccess={() => navigate('catalog', {}, false)} onBack={goBack} />;
   }
 
   if (currentPage.type === 'reader') {
     return (
       <BookReaderPage
         bookId={currentPage.bookId}
-        onBack={() => navigate('book-details', { bookId: currentPage.bookId })}
+        onBack={goBack}
       />
     );
   }
@@ -123,7 +143,7 @@ function AppContent() {
     <div className="min-h-screen bg-background transition-colors">
       <Header
         onSearch={handleSearch}
-        onNavigate={navigate}
+        onNavigate={(page, params) => navigate(page, params)}
         currentPage={currentPage.type}
       />
 
@@ -155,7 +175,7 @@ function AppContent() {
             onAuthorClick={(authorId) => navigate('author-details', { authorId })}
             onGenreClick={(genreId) => navigate('genre-details', { genreId })}
             onTagClick={(tagId) => navigate('tag-details', { tagId })}
-            onBack={() => navigate('catalog')}
+            onBack={goBack}
             onNavigateToLogin={() => navigate('login')}
           />
         )}
@@ -164,7 +184,7 @@ function AppContent() {
           <AuthorDetailsPage
             authorId={currentPage.authorId}
             onBookClick={(bookId) => navigate('book-details', { bookId })}
-            onBack={() => navigate('catalog')}
+            onBack={goBack}
           />
         )}
 
@@ -172,7 +192,7 @@ function AppContent() {
           <GenreDetailsPage
             genreId={currentPage.genreId}
             onBookClick={(bookId) => navigate('book-details', { bookId })}
-            onBack={() => navigate('catalog')}
+            onBack={goBack}
           />
         )}
 
@@ -180,7 +200,7 @@ function AppContent() {
           <TagDetailsPage
             tagId={currentPage.tagId}
             onBookClick={(bookId) => navigate('book-details', { bookId })}
-            onBack={() => navigate('catalog')}
+            onBack={goBack}
           />
         )}
 
@@ -189,6 +209,7 @@ function AppContent() {
         {currentPage.type === 'reading' && (
           <ProfilePage
             onBookClick={(bookId) => navigate('book-details', { bookId })}
+            onStartReading={(bookId) => navigate('reader', { bookId })}
             initialTab="reading"
           />
         )}
@@ -196,9 +217,11 @@ function AppContent() {
         {currentPage.type === 'favorites' && (
           <ProfilePage
             onBookClick={(bookId) => navigate('book-details', { bookId })}
+            onStartReading={(bookId) => navigate('reader', { bookId })}
             initialTab="favorites"
           />
         )}
+
 
         {currentPage.type === 'collections' && (
           <CollectionsPage onBookClick={(bookId) => navigate('book-details', { bookId })} />

@@ -9,10 +9,11 @@ import { API_BASE } from '../../../config';
 
 interface ProfilePageProps {
   onBookClick: (bookId: number) => void;
+  onStartReading: (bookId: number) => void;
   initialTab?: 'favorites' | 'reading';
 }
 
-export function ProfilePage({ onBookClick, initialTab = 'favorites' }: ProfilePageProps) {
+export function ProfilePage({ onBookClick, onStartReading, initialTab = 'favorites' }: ProfilePageProps) {
   const { user } = useAuth();
   const [activeTab, setActiveTab] = useState<'favorites' | 'reading'>(initialTab);
   const [favorites, setFavorites] = useState<BookListItem[]>([]);
@@ -227,6 +228,18 @@ export function ProfilePage({ onBookClick, initialTab = 'favorites' }: ProfilePa
                         <span>{formatLastOpened(item.lastOpened)}</span>
                       </div>
                     </div>
+                  </div>
+
+                  <div className="flex items-center">
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onStartReading(item.bookId);
+                      }}
+                      className="px-4 py-2 bg-amber-600 text-white rounded-lg hover:bg-amber-700 transition-colors text-sm font-medium whitespace-nowrap"
+                    >
+                      Продолжить чтение
+                    </button>
                   </div>
                 </div>
               ))}

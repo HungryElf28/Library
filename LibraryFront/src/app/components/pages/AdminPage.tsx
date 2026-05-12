@@ -35,7 +35,7 @@ export function AdminPage() {
   const [showAddTagModal, setShowAddTagModal] = useState(false);
 
   useEffect(() => {
-    setPage(1); // Reset page on tab or search change
+    setPage(1);
     loadData(1);
   }, [activeTab, searchTerm]);
 

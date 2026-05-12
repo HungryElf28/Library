@@ -131,6 +131,8 @@ public class UserRepository : IUserRepository
         var user = await _context.Users
             .Include(u => u.Books)
                 .ThenInclude(b => b.Authors)
+            .Include(u => u.Books)
+                .ThenInclude(b => b.Genres)
             .FirstOrDefaultAsync(u => u.Id == userId);
 
         if (user == null)
