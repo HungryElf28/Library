@@ -1,10 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using Library.Domain.Entities;
-using EfBook = Library.Infrastructure.Data.Models.Book;
+﻿using Library.Domain.Entities;
 using EfGenre = Library.Infrastructure.Data.Models.Genre;
 
 namespace Library.Infrastructure.Mappers

@@ -1,10 +1,8 @@
 ﻿using Library.Application.Services;
-using Library.Web.DTO.Tags;
-using Library.Web.DTO.Common;
 using Library.Domain.Entities;
-using Microsoft.AspNetCore.Http;
+using Library.Web.DTO.Common;
+using Library.Web.DTO.Tags;
 using Microsoft.AspNetCore.Mvc;
-using Library.Web.DTO.Genres;
 
 namespace Library.Web.Controllers
 {

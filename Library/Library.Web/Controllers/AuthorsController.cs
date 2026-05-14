@@ -1,11 +1,8 @@
 ﻿using Library.Application.Services;
-using Library.Web.DTO.Authors;
 using Library.Domain.Entities;
-using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc;
-using Library.Web.DTO.Books;
+using Library.Web.DTO.Authors;
 using Library.Web.DTO.Common;
-using Library.Web.Extensions;
+using Microsoft.AspNetCore.Mvc;
 
 namespace Library.Web.Controllers
 {
@@ -84,7 +81,7 @@ namespace Library.Web.Controllers
 
                 var uploadsPath = EnsureUploadsPath();
                 photoUrl = await SaveUploadedFile(dto.PhotoFile, uploadsPath);
-                
+
                 // Delete old photo if it was a local file
                 DeleteFileIfExists(existing.Photo);
             }

@@ -1,11 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using Library.Domain.Entities;
+﻿using Library.Domain.Entities;
 using Library.Domain.Interfaces;
-using Library.Application.Common.Enums;
 
 namespace Library.Application.Services
 {
@@ -51,7 +45,7 @@ namespace Library.Application.Services
         {
             var favorites = await userRepo.GetFavoritesAsync(userId);
             var readingProjections = await userRepo.GetReadingAsync(userId);
-            
+
             var readingBooks = new List<Book>();
             foreach (var r in readingProjections)
             {
@@ -60,14 +54,14 @@ namespace Library.Application.Services
             }
 
             var allKnownBooks = favorites.Concat(readingBooks).ToList();
-            
+
             var authorIds = allKnownBooks.SelectMany(b => b.Authors).Select(a => a.Id).Distinct().ToList();
             var genreIds = allKnownBooks.SelectMany(b => b.Genres).Select(g => g.Id).Distinct().ToList();
             var tagIds = allKnownBooks.SelectMany(b => b.Tags).Select(t => t.Id).Distinct().ToList();
             var excludeIds = allKnownBooks.Select(b => b.Id).Distinct().ToList();
 
             var recommendations = await _repo.GetRecommendationsAsync(userId, authorIds, genreIds, tagIds, excludeIds);
-            
+
             if (recommendations.Count == 0)
             {
                 recommendations = await _repo.GetMostReadBooksAsync(15);
@@ -83,25 +77,25 @@ namespace Library.Application.Services
         }
 
         public void DeleteFileIfExists(string? fileUrl)
-{
-    if (string.IsNullOrEmpty(fileUrl))
-        return;
-
-    try
-    {
-        var uri = new Uri(fileUrl);
-        var fileName = Path.GetFileName(uri.LocalPath);
-        var path = Path.Combine("wwwroot/uploads", fileName);
-
-        if (File.Exists(path))
         {
+            if (string.IsNullOrEmpty(fileUrl))
+                return;
+
+            try
+            {
+                var uri = new Uri(fileUrl);
+                var fileName = Path.GetFileName(uri.LocalPath);
+                var path = Path.Combine("wwwroot/uploads", fileName);
+
+                if (File.Exists(path))
+                {
                     File.Delete(path);
+                }
+            }
+            catch
+            {
+            }
         }
-    }
-    catch
-    {
-    }
-}
 
     }
 }

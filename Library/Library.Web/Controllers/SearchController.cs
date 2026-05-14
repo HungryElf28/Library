@@ -1,8 +1,4 @@
-﻿using Library.Web.DTO;
-using Library.Web.DTO.Authors;
-using Library.Web.DTO.Books;
-using Library.Web.DTO.Genres;
-using Library.Application.Services;
+﻿using Library.Application.Services;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Library.Web.Controllers

@@ -1,10 +1,8 @@
-﻿using Microsoft.EntityFrameworkCore;
-using Library.Domain.Entities;
+﻿using Library.Domain.Entities;
 using Library.Domain.Interfaces;
 using Library.Infrastructure.Data;
 using Library.Infrastructure.Mappers;
-
-using EfAuthor = Library.Infrastructure.Data.Models.Author;
+using Microsoft.EntityFrameworkCore;
 namespace Library.Infrastructure.Repositories;
 
 public class AuthorRepository : IAuthorRepository

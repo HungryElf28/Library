@@ -141,7 +141,7 @@ namespace Library.Web.Controllers
         public async Task<IActionResult> UpdateAvatar([FromForm] IFormFile file)
         {
             if (file == null) return BadRequest("No file uploaded");
-            
+
             var allowedExtensions = new[] { ".jpg", ".jpeg", ".png", ".webp" };
             var extension = Path.GetExtension(file.FileName).ToLower();
             if (!allowedExtensions.Contains(extension)) return BadRequest("Invalid file type");
@@ -162,7 +162,7 @@ namespace Library.Web.Controllers
             }
 
             var avatarUrl = $"/uploads/{fileName}";
-            
+
             if (!string.IsNullOrEmpty(user.AvatarFile))
             {
                 var oldPath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", user.AvatarFile.TrimStart('/'));
@@ -185,7 +185,7 @@ namespace Library.Web.Controllers
             {
                 var oldPath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", user.AvatarFile.TrimStart('/'));
                 if (System.IO.File.Exists(oldPath)) System.IO.File.Delete(oldPath);
-                
+
                 await _service.UpdateAvatar(userId, null);
             }
 
@@ -205,7 +205,7 @@ namespace Library.Web.Controllers
             {
                 var oldPath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", user.AvatarFile.TrimStart('/'));
                 if (System.IO.File.Exists(oldPath)) System.IO.File.Delete(oldPath);
-                
+
                 await _service.UpdateAvatar(id, null);
             }
 

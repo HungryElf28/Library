@@ -1,15 +1,14 @@
 ﻿using Library.Application.Services;
+using Library.Domain.Entities;
+using Library.Domain.Interfaces;
 using Library.Web.DTO.Authors;
 using Library.Web.DTO.Books;
 using Library.Web.DTO.Common;
 using Library.Web.DTO.Genres;
 using Library.Web.DTO.Tags;
-using Library.Domain.Entities;
-using Library.Domain.Interfaces;
-using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc;
 using Library.Web.Extensions;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 
 namespace Library.Web.Controllers
 {
@@ -80,8 +79,9 @@ namespace Library.Web.Controllers
         {
             var userId = User.GetUserId();
             var recommendations = await _service.GetRecommendationsAsync(userId, _userRepo);
-            
-            return Ok(recommendations.Select(b => new {
+
+            return Ok(recommendations.Select(b => new
+            {
                 b.Id,
                 b.Title,
                 b.CoverFile,

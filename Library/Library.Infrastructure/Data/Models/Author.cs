@@ -1,7 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-
-namespace Library.Infrastructure.Data.Models;
+﻿namespace Library.Infrastructure.Data.Models;
 
 public partial class Author
 {

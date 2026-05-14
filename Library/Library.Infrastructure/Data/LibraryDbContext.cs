@@ -1,9 +1,8 @@
-﻿using System;
-using System.Collections.Generic;
-using Library.Infrastructure.Data.Models;
+﻿using Library.Infrastructure.Data.Models;
 using Microsoft.EntityFrameworkCore;
 
 namespace Library.Infrastructure.Data;
+
 public partial class LibraryDbContext : DbContext
 {
     public LibraryDbContext()

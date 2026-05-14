@@ -1,6 +1,4 @@
-﻿using Microsoft.AspNetCore.Http;
-
-namespace Library.Web.DTO.Authors
+﻿namespace Library.Web.DTO.Authors
 {
     public class UpdateAuthorDto
     {

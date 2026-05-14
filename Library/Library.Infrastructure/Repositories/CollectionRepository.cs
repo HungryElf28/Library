@@ -1,16 +1,11 @@
-﻿using Library.Domain.Interfaces;
+﻿using Library.Domain.Entities;
+using Library.Domain.Interfaces;
 using Library.Infrastructure.Data;
-using Library.Domain.Entities;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
 
 namespace Library.Infrastructure.Repositories
 {
-    public class CollectionRepository: ICollectionRepository
+    public class CollectionRepository : ICollectionRepository
     {
         private readonly LibraryDbContext _context;
 

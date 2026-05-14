@@ -3,11 +3,11 @@ using Library.Domain.Interfaces;
 using Library.Infrastructure.Data;
 using Library.Infrastructure.Data.Models;
 using Library.Infrastructure.Repositories;
-using Microsoft.Extensions.FileProviders;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.IdentityModel.Tokens;
 using Microsoft.AspNetCore.StaticFiles;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.FileProviders;
+using Microsoft.IdentityModel.Tokens;
 using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -60,7 +60,7 @@ builder.Services.AddHealthChecks();
 
 var app = builder.Build();
 
-app.UseCors(policy => 
+app.UseCors(policy =>
     policy.AllowAnyOrigin()
           .AllowAnyMethod()
           .AllowAnyHeader());
@@ -107,7 +107,7 @@ using (var scope = app.Services.CreateScope())
 {
     var dbContext = scope.ServiceProvider.GetRequiredService<LibraryDbContext>();
     var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
-    
+
     int maxRetries = 10;
     int retryDelay = 3000;
     for (int i = 0; i < maxRetries; i++)
@@ -115,7 +115,7 @@ using (var scope = app.Services.CreateScope())
         try
         {
             logger.LogInformation("Attempt {Attempt} of {MaxRetries}: Ensuring pg_trgm extension and applying database migrations...", i + 1, maxRetries);
-            
+
             var pendingMigrations = dbContext.Database.GetPendingMigrations().ToList();
             if (pendingMigrations.Any())
             {
@@ -127,7 +127,7 @@ using (var scope = app.Services.CreateScope())
             }
 
             dbContext.Database.ExecuteSqlRaw("CREATE EXTENSION IF NOT EXISTS pg_trgm;");
-            
+
             dbContext.Database.Migrate();
             logger.LogInformation("Database migrations applied successfully.");
 
@@ -159,7 +159,7 @@ using (var scope = app.Services.CreateScope())
                 };
                 var hasher = new Microsoft.AspNetCore.Identity.PasswordHasher<User>();
                 adminUser.PasswordHash = hasher.HashPassword(adminUser, adminPassword);
-                
+
                 dbContext.Users.Add(adminUser);
                 dbContext.SaveChanges();
                 logger.LogInformation("Admin user seeded: {Login}", adminLogin);
@@ -174,8 +174,8 @@ using (var scope = app.Services.CreateScope())
                 logger.LogError(ex, "Failed to apply migrations after {MaxRetries} attempts.", maxRetries);
                 throw;
             }
-            
-            logger.LogWarning("Migration attempt {Attempt} failed: {Message}. Retrying in {DelaySeconds} seconds...", 
+
+            logger.LogWarning("Migration attempt {Attempt} failed: {Message}. Retrying in {DelaySeconds} seconds...",
                 i + 1, ex.Message, retryDelay / 1000);
             await Task.Delay(retryDelay);
         }

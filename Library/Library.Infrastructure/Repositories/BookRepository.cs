@@ -1,11 +1,8 @@
-﻿using Microsoft.EntityFrameworkCore;
-using Library.Domain.Entities;
+﻿using Library.Domain.Entities;
 using Library.Domain.Interfaces;
 using Library.Infrastructure.Data;
 using Library.Infrastructure.Mappers;
-
-using EfBook = Library.Infrastructure.Data.Models.Book;
-using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
+using Microsoft.EntityFrameworkCore;
 //using Library.Infrastructure.Data.Models;
 namespace Library.Infrastructure.Repositories;
 
@@ -68,7 +65,7 @@ public class BookRepository : IBookRepository
     }
 
     public async Task UpdateAsync(Book newBook)
-{
+    {
         var oldBook = await _context.Books
             .Include(b => b.Authors)
             .Include(b => b.Genres)
@@ -111,7 +108,7 @@ public class BookRepository : IBookRepository
             oldBook.Tags.Add(t);
 
         await _context.SaveChangesAsync();
-}
+    }
 
     public async Task DeleteAsync(int id)
     {
@@ -154,8 +151,8 @@ public class BookRepository : IBookRepository
             {
                 Book = b,
                 TitleSimilarity = EF.Functions.TrigramsSimilarity(b.Title, query),
-                AuthorSimilarity = b.Authors.Any() 
-                    ? b.Authors.Max(a => (double?)EF.Functions.TrigramsSimilarity(a.Name, query)) ?? 0 
+                AuthorSimilarity = b.Authors.Any()
+                    ? b.Authors.Max(a => (double?)EF.Functions.TrigramsSimilarity(a.Name, query)) ?? 0
                     : 0,
                 TitleContains = EF.Functions.ILike(b.Title, $"%{query}%")
             })
@@ -168,7 +165,8 @@ public class BookRepository : IBookRepository
             .Take(20)
             .ToListAsync();
 
-        return results.Select(x => {
+        return results.Select(x =>
+        {
             var b = x.Book;
             return new SearchProjection
             {
@@ -195,60 +193,60 @@ public class BookRepository : IBookRepository
     int pageSize,
     BookSortBy sortBy,
     BookSortOrder sortOrder)
-{
-    var query = _context.Books
-        .Include(b => b.Authors)
-        .Include(b => b.Genres)
-        .Include(b => b.Tags)
-        .Include(b => b.Reviews)
-        .AsQueryable();
-
-    if (!string.IsNullOrWhiteSpace(searchTerm))
     {
-        var term = searchTerm.ToLower();
-        query = query.Where(b => 
-            b.Title.ToLower().Contains(term) || 
-            b.Authors.Any(a => a.Name.ToLower().Contains(term))
-        );
+        var query = _context.Books
+            .Include(b => b.Authors)
+            .Include(b => b.Genres)
+            .Include(b => b.Tags)
+            .Include(b => b.Reviews)
+            .AsQueryable();
+
+        if (!string.IsNullOrWhiteSpace(searchTerm))
+        {
+            var term = searchTerm.ToLower();
+            query = query.Where(b =>
+                b.Title.ToLower().Contains(term) ||
+                b.Authors.Any(a => a.Name.ToLower().Contains(term))
+            );
+        }
+
+        if (genreId.HasValue)
+        {
+            query = query.Where(b => b.Genres.Any(g => g.Id == genreId));
+        }
+
+        if (authorId.HasValue)
+        {
+            query = query.Where(b => b.Authors.Any(a => a.Id == authorId));
+        }
+
+        if (tagId.HasValue)
+        {
+            query = query.Where(b => b.Tags.Any(t => t.Id == tagId));
+        }
+
+        query = sortBy switch
+        {
+            BookSortBy.Title => sortOrder == BookSortOrder.Desc
+                ? query.OrderByDescending(b => b.Title)
+                : query.OrderBy(b => b.Title),
+
+            BookSortBy.Rate => sortOrder == BookSortOrder.Desc
+                ? query.OrderByDescending(b => b.Rating)
+                : query.OrderBy(b => b.Rating),
+
+            _ => query.OrderBy(b => b.Id)
+        };
+
+        var total = await query.CountAsync();
+
+        var items = await query
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
+            .ToListAsync();
+
+        return (items.Select(BookMapper.ToDomain).ToList(), total);
     }
-
-    if (genreId.HasValue)
-    {
-        query = query.Where(b => b.Genres.Any(g => g.Id == genreId));
-    }
-
-    if (authorId.HasValue)
-    {
-        query = query.Where(b => b.Authors.Any(a => a.Id == authorId));
-    }
-
-    if (tagId.HasValue)
-    {
-        query = query.Where(b => b.Tags.Any(t => t.Id == tagId));
-    }
-
-    query = sortBy switch
-    {
-        BookSortBy.Title => sortOrder == BookSortOrder.Desc
-            ? query.OrderByDescending(b => b.Title)
-            : query.OrderBy(b => b.Title),
-
-        BookSortBy.Rate => sortOrder == BookSortOrder.Desc
-            ? query.OrderByDescending(b => b.Rating)
-            : query.OrderBy(b => b.Rating),
-
-        _ => query.OrderBy(b => b.Id)
-    };
-
-    var total = await query.CountAsync();
-
-    var items = await query
-        .Skip((page - 1) * pageSize)
-        .Take(pageSize)
-        .ToListAsync();
-
-    return (items.Select(BookMapper.ToDomain).ToList(), total);
-}
 
     public async Task<List<Book>> GetRecommendationsAsync(int userId, List<int> authorIds, List<int> genreIds, List<int> tagIds, List<int> excludeBookIds)
     {

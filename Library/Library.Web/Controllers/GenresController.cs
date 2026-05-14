@@ -1,12 +1,9 @@
 ﻿using Library.Application.Services;
-using Library.Web.DTO.Genres;
-using Library.Web.DTO.Common;
 using Library.Domain.Entities;
-
-using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc;
-using Library.Web.DTO.Books;
+using Library.Web.DTO.Common;
+using Library.Web.DTO.Genres;
 using Library.Web.Extensions;
+using Microsoft.AspNetCore.Mvc;
 
 namespace Library.Web.Controllers
 {

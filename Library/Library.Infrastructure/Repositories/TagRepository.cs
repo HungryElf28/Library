@@ -1,10 +1,8 @@
-﻿using Microsoft.EntityFrameworkCore;
-using Library.Domain.Entities;
+﻿using Library.Domain.Entities;
 using Library.Domain.Interfaces;
 using Library.Infrastructure.Data;
 using Library.Infrastructure.Mappers;
-
-using EfTag = Library.Infrastructure.Data.Models.Tag;
+using Microsoft.EntityFrameworkCore;
 namespace Library.Infrastructure.Repositories;
 
 public class TagRepository : ITagRepository

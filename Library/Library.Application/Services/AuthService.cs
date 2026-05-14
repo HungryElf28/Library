@@ -1,9 +1,9 @@
 ﻿using Library.Domain.Entities;
 using Library.Domain.Interfaces;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
-using Microsoft.IdentityModel.Tokens;
 using System.Text;
 
 namespace Library.Application.Services;
@@ -32,7 +32,7 @@ public class AuthService
         var roleId = await _repo.GetRoleIdByNameAsync("User");
 
         await _repo.AddAsync(user, hash, roleId);
-        
+
         var createdUser = await _repo.GetByLoginAsync(login);
         if (createdUser == null) throw new Exception("Error creating user");
 
