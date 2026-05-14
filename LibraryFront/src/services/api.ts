@@ -537,7 +537,7 @@ export const api = {
   },
 
   search: {
-    async globalSearch(query: string): Promise<SearchProjection[]> {
+    async search(query: string): Promise<SearchProjection[]> {
       const queryParams = new URLSearchParams({ query });
       const response = await fetchWithAuth(`${API_BASE}/api/search?${queryParams}`, {
         method: 'GET',
