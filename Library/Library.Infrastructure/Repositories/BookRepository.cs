@@ -179,7 +179,8 @@ public class BookRepository : IBookRepository
                 AuthorNames = b.Authors.Select(a => a.Name).ToList(),
                 GenreNames = b.Genres.Select(g => g.Name).ToList(),
                 AverageRating = b.Reviews.Any() ? b.Reviews.Average(r => (double)r.Rate) : 0,
-                Score = (x.TitleContains ? 2.0 : 0) + (x.TitleSimilarity * 1.5) + (x.AuthorSimilarity * 1.0)
+                Score = (x.TitleContains ? 2.0 : 0) + (x.TitleSimilarity * 1.5) + (x.AuthorSimilarity * 1.0),
+                TitleSimilarity = Math.Max(x.TitleSimilarity, x.TitleContains ? 1.0 : 0)
             };
         })
         .ToList();

@@ -29,7 +29,7 @@ namespace Library.Web.Controllers
         public async Task<IActionResult> Create(int bookId, [FromBody] CreateBookmarkDto dto)
         {
             var userId = User.GetUserId();
-            var bookmark = await _service.AddAsync(userId, bookId, dto.Page, dto.Note);
+            var bookmark = await _service.AddAsync(userId, bookId, dto.Page, dto.Cfi, dto.CharOffset, dto.Note);
             return Ok(bookmark);
         }
 
@@ -51,6 +51,8 @@ namespace Library.Web.Controllers
     public class CreateBookmarkDto
     {
         public int Page { get; set; }
+        public string? Cfi { get; set; }
+        public int? CharOffset { get; set; }
         public string? Note { get; set; }
     }
 }

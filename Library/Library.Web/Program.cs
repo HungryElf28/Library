@@ -116,6 +116,16 @@ using (var scope = app.Services.CreateScope())
         {
             logger.LogInformation("Attempt {Attempt} of {MaxRetries}: Ensuring pg_trgm extension and applying database migrations...", i + 1, maxRetries);
             
+            var pendingMigrations = dbContext.Database.GetPendingMigrations().ToList();
+            if (pendingMigrations.Any())
+            {
+                logger.LogInformation("Found {Count} pending migrations: {Migrations}", pendingMigrations.Count, string.Join(", ", pendingMigrations));
+            }
+            else
+            {
+                logger.LogInformation("No pending migrations found.");
+            }
+
             dbContext.Database.ExecuteSqlRaw("CREATE EXTENSION IF NOT EXISTS pg_trgm;");
             
             dbContext.Database.Migrate();

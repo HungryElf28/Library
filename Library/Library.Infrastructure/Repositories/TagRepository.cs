@@ -98,30 +98,28 @@ public class TagRepository : ITagRepository
 
     public async Task<List<SearchProjection>> SearchAsync(string query)
     {
-        var terms = query
-            .ToLower()
-            .Split(' ', StringSplitOptions.RemoveEmptyEntries);
-
         var tagsQuery = _context.Tags.AsQueryable();
 
-        foreach (var term in terms)
-        {
-            var t = term;
-            tagsQuery = tagsQuery.Where(tag => EF.Functions.ILike(tag.Name, $"%{t}%"));
-        }
-
         var results = await tagsQuery
+            .Select(t => new
+            {
+                Tag = t,
+                Similarity = EF.Functions.TrigramsSimilarity(t.Name, query),
+                Contains = EF.Functions.ILike(t.Name, $"%{query}%")
+            })
+            .Where(x => x.Similarity > 0.2 || x.Contains)
+            .OrderByDescending(x => (x.Contains ? 2.0 : 0) + x.Similarity)
             .Take(10)
             .ToListAsync();
 
-        return results.Select(tag => new SearchProjection
+        return results.Select(x => new SearchProjection
         {
             Type = "tag",
-            Id = tag.Id,
-            Title = tag.Name,
-            Score = tag.Name.Contains(query, StringComparison.OrdinalIgnoreCase) ? 1.0 : 0.5
+            Id = x.Tag.Id,
+            Title = x.Tag.Name,
+            Score = (x.Contains ? 2.0 : 0) + x.Similarity,
+            TitleSimilarity = Math.Max(x.Similarity, x.Contains ? 1.0 : 0)
         })
-        .OrderByDescending(x => x.Score)
         .ToList();
     }
 }

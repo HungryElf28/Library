@@ -205,6 +205,14 @@ namespace Library.Infrastructure.Migrations
                         .HasColumnType("text")
                         .HasColumnName("note");
 
+                    b.Property<string>("Cfi")
+                        .HasColumnType("text")
+                        .HasColumnName("cfi");
+
+                    b.Property<int?>("CharOffset")
+                        .HasColumnType("integer")
+                        .HasColumnName("char_offset");
+
                     b.Property<int>("Page")
                         .HasColumnType("integer")
                         .HasColumnName("page");
@@ -398,6 +406,10 @@ namespace Library.Infrastructure.Migrations
                         .HasColumnName("id");
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("AvatarFile")
+                        .HasColumnType("character varying")
+                        .HasColumnName("avatar_file");
 
                     b.Property<string>("Email")
                         .IsRequired()

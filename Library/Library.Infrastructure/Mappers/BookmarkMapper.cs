@@ -12,6 +12,8 @@ public static class BookmarkMapper
             ef.UserId,
             ef.BookId,
             ef.Page,
+            ef.Cfi,
+            ef.CharOffset,
             ef.Note,
             ef.CreatedAt
         );
@@ -25,6 +27,8 @@ public static class BookmarkMapper
             UserId = domain.UserId,
             BookId = domain.BookId,
             Page = domain.Page,
+            Cfi = domain.Cfi,
+            CharOffset = domain.CharOffset,
             Note = domain.Note,
             CreatedAt = domain.CreatedAt
         };

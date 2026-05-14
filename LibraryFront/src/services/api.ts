@@ -420,6 +420,26 @@ export const api = {
       });
     },
 
+    async updateAvatar(data: FormData): Promise<{ avatarUrl: string }> {
+      const response = await fetchWithAuth(`${API_BASE}/api/Users/avatar`, {
+        method: 'POST',
+        body: data,
+      });
+      return safeJsonResponse<{ avatarUrl: string }>(response);
+    },
+
+    async deleteAvatar(): Promise<void> {
+      await fetchWithAuth(`${API_BASE}/api/Users/avatar`, {
+        method: 'DELETE',
+      });
+    },
+
+    async deleteUserAvatar(userId: number): Promise<void> {
+      await fetchWithAuth(`${API_BASE}/api/Users/${userId}/avatar`, {
+        method: 'DELETE',
+      });
+    },
+
     async updateReadingProgress(bookId: number, page: number, totalPages: number): Promise<void> {
       await api.users.saveProgress(bookId, page, totalPages);
 
@@ -494,10 +514,10 @@ export const api = {
       return safeJsonResponse<Bookmark[]>(response);
     },
 
-    async create(bookId: number, page: number, note?: string): Promise<Bookmark> {
+    async create(bookId: number, page: number, note?: string, cfi?: string, charOffset?: number): Promise<Bookmark> {
       const response = await fetchWithAuth(`${API_BASE}/api/Bookmarks/${bookId}`, {
         method: 'POST',
-        body: JSON.stringify({ page, note }),
+        body: JSON.stringify({ page, note, cfi, charOffset }),
       });
       return safeJsonResponse<Bookmark>(response);
     },
@@ -517,13 +537,22 @@ export const api = {
   },
 
   search: {
-    async search(query: string): Promise<SearchProjection[]> {
+    async globalSearch(query: string): Promise<SearchProjection[]> {
       const queryParams = new URLSearchParams({ query });
       const response = await fetchWithAuth(`${API_BASE}/api/search?${queryParams}`, {
         method: 'GET',
       });
 
       return safeJsonResponse<SearchProjection[]>(response);
+    },
+
+    async getSuggestions(query: string): Promise<Record<string, string[]>> {
+      const queryParams = new URLSearchParams({ query });
+      const response = await fetchWithAuth(`${API_BASE}/api/search/suggestions?${queryParams}`, {
+        method: 'GET',
+      });
+
+      return safeJsonResponse<Record<string, string[]>>(response);
     },
   },
 };

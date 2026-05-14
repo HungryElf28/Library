@@ -120,7 +120,8 @@ namespace Library.Web.Controllers
                     b.Id,
                     b.Title,
                     b.CoverFile,
-                    Authors = b.Authors.Select(a => a.Name).ToList()
+                    Authors = b.Authors.Select(a => a.Name).ToList(),
+                    Genres = b.Genres.Select(g => g.Name).ToList()
                 }).ToList()
             };
         }

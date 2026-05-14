@@ -34,6 +34,7 @@ namespace Library.Web.Controllers
                         id = result.user.Id,
                         login = result.user.Login,
                         email = result.user.Email,
+                        avatarFile = result.user.AvatarFile,
                         role = result.user.RoleName.ToLower() == "admin" ? "admin" : "client",
                         isSubscribed = result.user.IsSubscribed,
                         subscriptionExpiresAt = result.user.SubscriptionExpiresAt
@@ -63,6 +64,7 @@ namespace Library.Web.Controllers
                     id = auth.user.Id,
                     login = auth.user.Login,
                     email = auth.user.Email,
+                    avatarFile = auth.user.AvatarFile,
                     role = auth.user.RoleName.ToLower() == "admin" ? "admin" : "client",
                     isSubscribed = auth.user.IsSubscribed,
                     subscriptionExpiresAt = auth.user.SubscriptionExpiresAt
@@ -83,6 +85,7 @@ namespace Library.Web.Controllers
                 id = user.Id,
                 login = user.Login,
                 email = user.Email,
+                avatarFile = user.AvatarFile,
                 role = user.RoleName.ToLower() == "admin" ? "admin" : "client",
                 isSubscribed = user.IsSubscribed,
                 subscriptionExpiresAt = user.SubscriptionExpiresAt

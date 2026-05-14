@@ -98,30 +98,28 @@ public class GenreRepository : IGenreRepository
 
     public async Task<List<SearchProjection>> SearchAsync(string query)
     {
-        var terms = query
-            .ToLower()
-            .Split(' ', StringSplitOptions.RemoveEmptyEntries);
-
         var genresQuery = _context.Genres.AsQueryable();
 
-        foreach (var term in terms)
-        {
-            var t = term;
-            genresQuery = genresQuery.Where(g => EF.Functions.ILike(g.Name, $"%{t}%"));
-        }
-
         var results = await genresQuery
+            .Select(g => new
+            {
+                Genre = g,
+                Similarity = EF.Functions.TrigramsSimilarity(g.Name, query),
+                Contains = EF.Functions.ILike(g.Name, $"%{query}%")
+            })
+            .Where(x => x.Similarity > 0.2 || x.Contains)
+            .OrderByDescending(x => (x.Contains ? 2.0 : 0) + x.Similarity)
             .Take(10)
             .ToListAsync();
 
-        return results.Select(g => new SearchProjection
+        return results.Select(x => new SearchProjection
         {
             Type = "genre",
-            Id = g.Id,
-            Title = g.Name,
-            Score = g.Name.Contains(query, StringComparison.OrdinalIgnoreCase) ? 1.0 : 0.5
+            Id = x.Genre.Id,
+            Title = x.Genre.Name,
+            Score = (x.Contains ? 2.0 : 0) + x.Similarity,
+            TitleSimilarity = Math.Max(x.Similarity, x.Contains ? 1.0 : 0)
         })
-        .OrderByDescending(x => x.Score)
         .ToList();
     }
 

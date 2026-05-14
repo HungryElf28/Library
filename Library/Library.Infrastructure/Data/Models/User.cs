@@ -13,6 +13,8 @@ public partial class User
 
     public string Email { get; set; } = null!;
 
+    public string? AvatarFile { get; set; }
+
     public string NormalizedEmail { get; set; } = null!;
 
     public string NormalizedLogin { get; set; } = null!;

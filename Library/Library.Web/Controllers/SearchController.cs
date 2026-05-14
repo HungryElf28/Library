@@ -28,7 +28,7 @@ namespace Library.Web.Controllers
         [HttpGet("suggestions")]
         public async Task<IActionResult> GetSuggestions(string query)
         {
-            var result = await _service.GetSearchSuggestionsAsync(query);
+            var result = await _service.GetCategorizedSuggestionsAsync(query);
             return Ok(result);
         }
     }

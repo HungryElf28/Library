@@ -16,5 +16,6 @@ namespace Library.Domain.Entities
         public List<string>? GenreNames { get; set; }
         public double AverageRating { get; set; }
         public double Score { get; set; }
+        public double TitleSimilarity { get; set; }
     }
 }

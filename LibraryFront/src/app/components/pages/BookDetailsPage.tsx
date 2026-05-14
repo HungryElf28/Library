@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Book, Review, CreateReviewDto, Collection } from '../../../types';
 import { api } from '../../../services/api';
-import { Star, Heart, BookOpen, Loader, ArrowLeft, Edit, ListPlus, X, Trash2 } from 'lucide-react';
+import { Star, Heart, BookOpen, Loader, ArrowLeft, Edit, ListPlus, X, Trash2, User } from 'lucide-react';
 import { useAuth } from '../../../contexts/AuthContext';
 import { BookEditModal } from '../BookEditModal';
 import { API_BASE } from '../../../config';
@@ -428,24 +428,37 @@ export function BookDetailsPage({
                                 : 'bg-gray-50 dark:bg-stone-900/40 border-transparent hover:border-amber-100 dark:hover:border-stone-800'
                         }`}>
                           <div className="flex items-start justify-between mb-3">
-                            <div>
-                              <div className="flex items-center gap-2">
-                                <p className="font-bold text-gray-900 dark:text-stone-100">{review.userName}</p>
-                                {isOwnReview && (
-                                    <span className="text-[10px] px-2 py-0.5 bg-amber-200 dark:bg-amber-800 text-amber-800 dark:text-amber-200 rounded-full font-bold uppercase tracking-wider">Вы</span>
+                            <div className="flex items-center gap-3">
+                              <div className="w-10 h-10 rounded-full bg-amber-100 dark:bg-stone-800 flex items-center justify-center overflow-hidden border border-amber-200 dark:border-stone-700 shadow-sm">
+                                {review.userAvatar ? (
+                                  <img 
+                                    src={review.userAvatar.startsWith('http') ? review.userAvatar : `${API_BASE}${review.userAvatar}`}
+                                    className="w-full h-full object-cover"
+                                    alt=""
+                                  />
+                                ) : (
+                                  <User className="w-5 h-5 text-gray-500 dark:text-stone-500" />
                                 )}
                               </div>
-                              <div className="flex items-center gap-1 mt-1">
-                                {Array.from({ length: 5 }, (_, i) => (
-                                  <Star
-                                    key={i}
-                                    className={`w-3.5 h-3.5 ${
-                                      i < review.rate
-                                        ? 'fill-yellow-400 text-yellow-400'
-                                        : 'text-gray-300 dark:text-stone-700'
-                                    }`}
-                                  />
-                                ))}
+                              <div>
+                                <div className="flex items-center gap-2">
+                                  <p className="font-bold text-gray-900 dark:text-stone-100">{review.userName}</p>
+                                  {isOwnReview && (
+                                      <span className="text-[10px] px-2 py-0.5 bg-amber-200 dark:bg-amber-800 text-amber-800 dark:text-amber-200 rounded-full font-bold uppercase tracking-wider">Вы</span>
+                                  )}
+                                </div>
+                                <div className="flex items-center gap-1 mt-0.5">
+                                  {Array.from({ length: 5 }, (_, i) => (
+                                    <Star
+                                      key={i}
+                                      className={`w-3 h-3 ${
+                                        i < review.rate
+                                          ? 'fill-yellow-400 text-yellow-400'
+                                          : 'text-gray-300 dark:text-stone-700'
+                                      }`}
+                                    />
+                                  ))}
+                                </div>
                               </div>
                             </div>
                             <div className="flex items-center gap-3">

@@ -13,6 +13,10 @@ public partial class Bookmark
 
     public int Page { get; set; }
 
+    public string? Cfi { get; set; }
+
+    public int? CharOffset { get; set; }
+
     public string? Note { get; set; }
 
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;

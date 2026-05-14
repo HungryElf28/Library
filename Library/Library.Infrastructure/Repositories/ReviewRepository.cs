@@ -75,7 +75,8 @@ namespace Library.Infrastructure.Repositories
                     r.BookId,
                     r.Rate,
                     r.ReviewText,
-                    r.User.Login
+                    r.User.Login,
+                    r.User.AvatarFile
                 ))
                 .ToListAsync();
         }
@@ -101,7 +102,8 @@ namespace Library.Infrastructure.Repositories
                 r.BookId,
                 r.Rate,
                 r.ReviewText,
-                r.User.Login
+                r.User.Login,
+                r.User.AvatarFile
             );
         }
 

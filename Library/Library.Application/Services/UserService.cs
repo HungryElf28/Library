@@ -57,6 +57,11 @@ namespace Library.Application.Services
             await _repo.UpdateSubscriptionAsync(userId, isSubscribed, expiresAt);
         }
 
+        public async Task UpdateAvatar(int userId, string? avatarFile)
+        {
+            await _repo.UpdateAvatarAsync(userId, avatarFile);
+        }
+
         public async Task DeleteUser(int userId)
         {
             await _repo.DeleteAsync(userId);

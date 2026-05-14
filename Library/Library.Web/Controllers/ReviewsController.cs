@@ -56,6 +56,7 @@ namespace Library.Web.Controllers
                     r.Id,
                     r.UserId,
                     userName = r.UserName,
+                    userAvatar = r.UserAvatar,
                     r.BookId,
                     r.Rate,
                     text = r.Text

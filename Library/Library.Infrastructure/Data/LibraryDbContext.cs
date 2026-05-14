@@ -147,6 +147,8 @@ public partial class LibraryDbContext : DbContext
             entity.Property(e => e.UserId).HasColumnName("user_id");
             entity.Property(e => e.BookId).HasColumnName("book_id");
             entity.Property(e => e.Page).HasColumnName("page");
+            entity.Property(e => e.Cfi).HasColumnName("cfi");
+            entity.Property(e => e.CharOffset).HasColumnName("char_offset");
             entity.Property(e => e.Note).HasColumnName("note");
             entity.Property(e => e.CreatedAt)
                 .HasColumnName("created_at")
@@ -299,6 +301,9 @@ public partial class LibraryDbContext : DbContext
             entity.Property(e => e.Email)
                 .HasColumnType("character varying")
                 .HasColumnName("email");
+            entity.Property(e => e.AvatarFile)
+                .HasColumnType("character varying")
+                .HasColumnName("avatar_file");
             entity.Property(e => e.Login)
                 .HasColumnType("character varying")
                 .HasColumnName("login");

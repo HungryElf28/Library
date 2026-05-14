@@ -24,6 +24,7 @@ namespace Library.Domain.Interfaces
         Task<ReadingBook?> GetProgressAsync(int userId, int bookId);
         Task<List<ReadingBook>> GetReadingAsync(int userId);
         Task UpdateSubscriptionAsync(int userId, bool isSubscribed, DateTime? expiresAt);
+        Task UpdateAvatarAsync(int userId, string? avatarFile);
         Task DeleteAsync(int userId);
         Task ChangeRoleAsync(int userId, string roleName);
         Task<List<User>> GetAllAsync();

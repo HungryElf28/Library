@@ -42,24 +42,60 @@ namespace Library.Application.Services
                 .ToList();
         }
 
-        public async Task<List<string>> GetSearchSuggestionsAsync(string query)
+        public async Task<Dictionary<string, List<string>>> GetCategorizedSuggestionsAsync(string query)
         {
-            if (string.IsNullOrWhiteSpace(query) || query.Length < 3) return new List<string>();
+            if (string.IsNullOrWhiteSpace(query)) return new Dictionary<string, List<string>>();
 
             var books = await _bookRepo.SearchAsync(query);
             var authors = await _authorRepo.SearchAsync(query);
-            
-            if (books.Any(x => x.Score >= 1.0) || authors.Any(x => x.Score >= 1.0)) 
-                return new List<string>();
+            var genres = await _genreRepo.SearchAsync(query);
+            var tags = await _tagRepo.SearchAsync(query);
 
-            var suggestions = books.Concat(authors)
-                .OrderByDescending(x => x.Score)
-                .Take(3)
+            var result = new Dictionary<string, List<string>>();
+
+            var bookTitles = books
+                .Where(x => x.TitleSimilarity > 0.2)
+                .OrderByDescending(x => x.TitleSimilarity)
                 .Select(x => x.Title)
                 .Distinct()
+                .Take(5)
                 .ToList();
+            if (bookTitles.Any()) result["Книги"] = bookTitles;
 
-            return suggestions;
+            var authorNames = authors
+                .Where(x => x.TitleSimilarity > 0.2)
+                .OrderByDescending(x => x.TitleSimilarity)
+                .Select(x => x.Title)
+                .Distinct()
+                .Take(5)
+                .ToList();
+            if (authorNames.Any()) result["Авторы"] = authorNames;
+
+            var genreNames = genres
+                .Where(x => x.TitleSimilarity > 0.2)
+                .OrderByDescending(x => x.TitleSimilarity)
+                .Select(x => x.Title)
+                .Distinct()
+                .Take(5)
+                .ToList();
+            if (genreNames.Any()) result["Жанры"] = genreNames;
+
+            var tagNames = tags
+                .Where(x => x.TitleSimilarity > 0.2)
+                .OrderByDescending(x => x.TitleSimilarity)
+                .Select(x => x.Title)
+                .Distinct()
+                .Take(5)
+                .ToList();
+            if (tagNames.Any()) result["Теги"] = tagNames;
+
+            return result;
+        }
+
+        public async Task<List<string>> GetSearchSuggestionsAsync(string query)
+        {
+            var categorized = await GetCategorizedSuggestionsAsync(query);
+            return categorized.Values.SelectMany(x => x).Distinct().Take(8).ToList();
         }
     }
 }

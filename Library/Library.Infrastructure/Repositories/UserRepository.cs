@@ -235,6 +235,15 @@ public class UserRepository : IUserRepository
         await _context.SaveChangesAsync();
     }
 
+    public async Task UpdateAvatarAsync(int userId, string? avatarFile)
+    {
+        var user = await _context.Users.FindAsync(userId);
+        if (user == null) throw new Exception("User not found");
+
+        user.AvatarFile = avatarFile;
+        await _context.SaveChangesAsync();
+    }
+
     public async Task DeleteAsync(int userId)
     {
         var user = await _context.Users.FindAsync(userId);

@@ -24,6 +24,8 @@ namespace Library.Infrastructure.Repositories
             var collections = await _context.Collections
                 .Include(c => c.Books)
                     .ThenInclude(b => b.Authors)
+                .Include(c => c.Books)
+                    .ThenInclude(b => b.Genres)
                 .Where(c => c.UserId == userId)
                 .ToListAsync();
 
@@ -35,6 +37,8 @@ namespace Library.Infrastructure.Repositories
             var ef = await _context.Collections
                 .Include(c => c.Books)
                     .ThenInclude(b => b.Authors)
+                .Include(c => c.Books)
+                    .ThenInclude(b => b.Genres)
                 .FirstOrDefaultAsync(c => c.Id == id);
 
             if (ef == null) return null;
@@ -119,6 +123,7 @@ namespace Library.Infrastructure.Repositories
                 {
                     var book = new Book(b.Id, b.Title, b.TextFile, b.CoverFile, b.Description);
                     book.Authors.AddRange(b.Authors.Select(a => new Author(a.Id, a.Name, a.Bio, a.Photo)));
+                    book.Genres.AddRange(b.Genres.Select(g => new Genre(g.Id, g.Name)));
                     return book;
                 })
             );

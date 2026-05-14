@@ -1,8 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { BookListItem, ReadingBook } from '../../../types';
 import { api } from '../../../services/api';
 import { BookCard } from '../BookCard';
-import { Heart, BookOpen, User, LogOut, Clock, Loader } from 'lucide-react';
+import { Heart, BookOpen, User, LogOut, Clock, Loader, Camera, Trash2 } from 'lucide-react';
 import { useAuth } from '../../../contexts/AuthContext';
 import { API_BASE } from '../../../config';
 
@@ -14,11 +14,13 @@ interface ProfilePageProps {
 }
 
 export function ProfilePage({ onBookClick, onStartReading, initialTab = 'favorites' }: ProfilePageProps) {
-  const { user } = useAuth();
+  const { user, refreshUser } = useAuth();
   const [activeTab, setActiveTab] = useState<'favorites' | 'reading'>(initialTab);
   const [favorites, setFavorites] = useState<BookListItem[]>([]);
   const [reading, setReading] = useState<ReadingBook[]>([]);
   const [loading, setLoading] = useState(true);
+  const [isUpdatingAvatar, setIsUpdatingAvatar] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     loadData();
@@ -38,6 +40,46 @@ export function ProfilePage({ onBookClick, onStartReading, initialTab = 'favorit
       console.error('Error loading data:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleAvatarClick = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    const formData = new FormData();
+    formData.append('file', file);
+
+    setIsUpdatingAvatar(true);
+    try {
+      await api.users.updateAvatar(formData);
+      await refreshUser();
+    } catch (error) {
+      console.error('Error updating avatar:', error);
+      alert('Ошибка при обновлении аватара');
+    } finally {
+      setIsUpdatingAvatar(false);
+      if (fileInputRef.current) fileInputRef.current.value = '';
+    }
+  };
+
+  const handleDeleteAvatar = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!window.confirm('Вы уверены, что хотите удалить аватар?')) return;
+
+    setIsUpdatingAvatar(true);
+    try {
+      await api.users.deleteAvatar();
+      await refreshUser();
+    } catch (error) {
+      console.error('Error deleting avatar:', error);
+      alert('Ошибка при удалении аватара');
+    } finally {
+      setIsUpdatingAvatar(false);
     }
   };
 
@@ -96,10 +138,54 @@ export function ProfilePage({ onBookClick, onStartReading, initialTab = 'favorit
   return (
     <div>
       <div className="bg-card rounded-lg shadow-sm border border-amber-200 dark:border-stone-700 p-6 mb-6">
-        <div className="flex items-center gap-4">
-          <div className="w-16 h-16 bg-gradient-to-br from-amber-500 to-orange-600 rounded-full flex items-center justify-center">
-            <User className="w-8 h-8 text-white" />
+        <div className="flex items-center gap-6">
+          <div className="relative group">
+            <div 
+              onClick={handleAvatarClick}
+              className={`w-24 h-24 rounded-full overflow-hidden flex items-center justify-center cursor-pointer transition-all ${
+                isUpdatingAvatar ? 'opacity-50' : 'hover:ring-4 hover:ring-amber-200 dark:hover:ring-stone-600'
+              } ${user?.avatarFile ? '' : 'bg-gradient-to-br from-amber-500 to-orange-600'}`}
+            >
+              {user?.avatarFile ? (
+                <img 
+                  src={user.avatarFile.startsWith('http') ? user.avatarFile : `${API_BASE}${user.avatarFile}`}
+                  alt={user.login}
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                <User className="w-12 h-12 text-white" />
+              )}
+              
+              <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                <Camera className="w-8 h-8 text-white" />
+              </div>
+
+              {isUpdatingAvatar && (
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <Loader className="w-8 h-8 text-amber-600 animate-spin" />
+                </div>
+              )}
+            </div>
+            
+            {user?.avatarFile && !isUpdatingAvatar && (
+              <button
+                onClick={handleDeleteAvatar}
+                className="absolute -top-1 -right-1 p-1.5 bg-red-500 text-white rounded-full hover:bg-red-600 transition-colors shadow-sm"
+                title="Удалить аватар"
+              >
+                <Trash2 className="w-3 h-3" />
+              </button>
+            )}
+            
+            <input
+              type="file"
+              ref={fileInputRef}
+              onChange={handleFileChange}
+              className="hidden"
+              accept="image/*"
+            />
           </div>
+
           <div>
             <h1 className="text-2xl font-bold text-gray-900 dark:text-stone-100">{user?.login}</h1>
             <p className="text-gray-600 dark:text-stone-400">{user?.email}</p>

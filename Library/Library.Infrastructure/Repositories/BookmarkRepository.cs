@@ -39,7 +39,10 @@ public class BookmarkRepository : IBookmarkRepository
         if (ef == null) throw new Exception("Bookmark not found");
 
         ef.Note = bookmark.Note;
-        ef.Page = bookmark.Page;
+        
+        if (bookmark.Page > 0) ef.Page = bookmark.Page;
+        if (bookmark.Cfi != null) ef.Cfi = bookmark.Cfi;
+        if (bookmark.CharOffset != null) ef.CharOffset = bookmark.CharOffset;
 
         await _context.SaveChangesAsync();
     }

@@ -2,6 +2,7 @@ export interface User {
   id: number;
   login: string;
   email: string;
+  avatarFile?: string;
   role: 'guest' | 'client' | 'admin';
   isSubscribed?: boolean;
   subscriptionExpiresAt?: string;
@@ -52,6 +53,7 @@ export interface Review {
   id: number;
   userId: number;
   userName: string;
+  userAvatar?: string;
   bookId: number;
   rate: number;
   text?: string;
@@ -78,6 +80,8 @@ export interface Bookmark {
   id: number;
   bookId: number;
   page: number;
+  cfi?: string;
+  charOffset?: number;
   note?: string;
   createdAt: string;
 }
@@ -160,6 +164,17 @@ export interface PaginatedResponse<T> {
 export interface AuthResponse {
   token: string;
   user: User;
+}
+
+export interface SearchProjection {
+  type: string;
+  id: number;
+  title: string;
+  coverFile?: string;
+  authorNames?: string[];
+  genreNames?: string[];
+  averageRating: number;
+  score: number;
 }
 
 export interface ReaderSettings {

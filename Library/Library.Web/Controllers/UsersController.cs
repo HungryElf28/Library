@@ -137,6 +137,82 @@ namespace Library.Web.Controllers
         }
 
         [Authorize]
+        [HttpPost("avatar")]
+        public async Task<IActionResult> UpdateAvatar([FromForm] IFormFile file)
+        {
+            if (file == null) return BadRequest("No file uploaded");
+            
+            var allowedExtensions = new[] { ".jpg", ".jpeg", ".png", ".webp" };
+            var extension = Path.GetExtension(file.FileName).ToLower();
+            if (!allowedExtensions.Contains(extension)) return BadRequest("Invalid file type");
+
+            var userId = User.GetUserId();
+            var user = await _service.GetByIdAsync(userId);
+            if (user == null) return NotFound();
+
+            var uploadsPath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "uploads");
+            Directory.CreateDirectory(uploadsPath);
+
+            var fileName = $"avatar_{userId}_{Guid.NewGuid()}{extension}";
+            var filePath = Path.Combine(uploadsPath, fileName);
+
+            using (var stream = new FileStream(filePath, FileMode.Create))
+            {
+                await file.CopyToAsync(stream);
+            }
+
+            var avatarUrl = $"/uploads/{fileName}";
+            
+            if (!string.IsNullOrEmpty(user.AvatarFile))
+            {
+                var oldPath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", user.AvatarFile.TrimStart('/'));
+                if (System.IO.File.Exists(oldPath)) System.IO.File.Delete(oldPath);
+            }
+
+            await _service.UpdateAvatar(userId, avatarUrl);
+            return Ok(new { avatarUrl });
+        }
+
+        [Authorize]
+        [HttpDelete("avatar")]
+        public async Task<IActionResult> DeleteAvatar()
+        {
+            var userId = User.GetUserId();
+            var user = await _service.GetByIdAsync(userId);
+            if (user == null) return NotFound();
+
+            if (!string.IsNullOrEmpty(user.AvatarFile))
+            {
+                var oldPath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", user.AvatarFile.TrimStart('/'));
+                if (System.IO.File.Exists(oldPath)) System.IO.File.Delete(oldPath);
+                
+                await _service.UpdateAvatar(userId, null);
+            }
+
+            return NoContent();
+        }
+
+        [Authorize]
+        [HttpDelete("{id}/avatar")]
+        public async Task<IActionResult> DeleteUserAvatar(int id)
+        {
+            if (!User.IsAdmin()) return Forbid();
+
+            var user = await _service.GetByIdAsync(id);
+            if (user == null) return NotFound();
+
+            if (!string.IsNullOrEmpty(user.AvatarFile))
+            {
+                var oldPath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", user.AvatarFile.TrimStart('/'));
+                if (System.IO.File.Exists(oldPath)) System.IO.File.Delete(oldPath);
+                
+                await _service.UpdateAvatar(id, null);
+            }
+
+            return NoContent();
+        }
+
+        [Authorize]
         [HttpGet("all")]
         public async Task<IActionResult> GetAllUsers([FromQuery] PaginationQueryDto query)
         {
@@ -160,9 +236,19 @@ namespace Library.Web.Controllers
             var items = users
                 .OrderBy(u => u.Login)
                 .Skip((page - 1) * pageSize)
-                .Take(pageSize);
+                .Take(pageSize)
+                .Select(u => new
+                {
+                    u.Id,
+                    u.Login,
+                    u.Email,
+                    u.AvatarFile,
+                    role = u.RoleName.ToLower() == "admin" ? "admin" : "client",
+                    u.IsSubscribed,
+                    u.SubscriptionExpiresAt
+                });
 
-            return Ok(PagedResponseDto<Library.Domain.Entities.User>.Create(items, total, page, pageSize));
+            return Ok(PagedResponseDto<object>.Create(items, total, page, pageSize));
         }
 
         [Authorize]

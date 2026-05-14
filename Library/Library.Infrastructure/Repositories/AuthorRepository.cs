@@ -100,31 +100,29 @@ public class AuthorRepository : IAuthorRepository
 
     public async Task<List<SearchProjection>> SearchAsync(string query)
     {
-        var terms = query
-            .ToLower()
-            .Split(' ', StringSplitOptions.RemoveEmptyEntries);
-
         var authorsQuery = _context.Authors.AsQueryable();
 
-        foreach (var term in terms)
-        {
-            var t = term;
-            authorsQuery = authorsQuery.Where(a => EF.Functions.ILike(a.Name, $"%{t}%"));
-        }
-
         var results = await authorsQuery
+            .Select(a => new
+            {
+                Author = a,
+                Similarity = EF.Functions.TrigramsSimilarity(a.Name, query),
+                Contains = EF.Functions.ILike(a.Name, $"%{query}%")
+            })
+            .Where(x => x.Similarity > 0.2 || x.Contains)
+            .OrderByDescending(x => (x.Contains ? 2.0 : 0) + x.Similarity)
             .Take(10)
             .ToListAsync();
 
-        return results.Select(a => new SearchProjection
+        return results.Select(x => new SearchProjection
         {
             Type = "author",
-            Id = a.Id,
-            Title = a.Name,
-            CoverFile = a.Photo,
-            Score = a.Name.Contains(query, StringComparison.OrdinalIgnoreCase) ? 1.0 : 0.5
+            Id = x.Author.Id,
+            Title = x.Author.Name,
+            CoverFile = x.Author.Photo,
+            Score = (x.Contains ? 2.0 : 0) + x.Similarity,
+            TitleSimilarity = Math.Max(x.Similarity, x.Contains ? 1.0 : 0)
         })
-        .OrderByDescending(x => x.Score)
         .ToList();
     }
 }

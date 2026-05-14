@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Book, Author, Genre, Tag, User } from '../../../types';
 import { api } from '../../../services/api';
 import { API_BASE } from '../../../config';
+import { useAuth } from '../../../contexts/AuthContext';
 import { Plus, Edit, Trash2, Loader, Save, X, Search, ChevronLeft, ChevronRight, User as UserIcon, Shield, ShieldCheck } from 'lucide-react';
 import { BookEditModal } from '../BookEditModal';
 import { AuthorEditModal } from '../AuthorEditModal';
@@ -11,6 +12,7 @@ import { TagEditModal } from '../TagEditModal';
 type TabType = 'books' | 'authors' | 'genres' | 'tags' | 'users';
 
 export function AdminPage() {
+  const { user: currentUser } = useAuth();
   const [activeTab, setActiveTab] = useState<TabType>('books');
   const [loading, setLoading] = useState(true);
   
@@ -79,6 +81,11 @@ export function AdminPage() {
   const totalPages = Math.ceil(totalCount / pageSize);
 
   const handleDelete = async (id: number, type: TabType) => {
+    if (type === 'users' && id === currentUser?.id) {
+        alert('Вы не можете удалить свою собственную учетную запись');
+        return;
+    }
+    
     if (!confirm(`Вы уверены, что хотите удалить этот объект?`)) return;
 
     try {
@@ -96,6 +103,10 @@ export function AdminPage() {
   };
 
   const handleRoleChange = async (userId: number, currentRole: string) => {
+    if (userId === currentUser?.id) {
+        alert('Вы не можете изменить свою собственную роль');
+        return;
+    }
 
     const newRole = currentRole.toLowerCase() === 'admin' ? 'User' : 'Admin';
     if (!confirm(`Изменить роль пользователя на ${newRole}?`)) return;
@@ -106,6 +117,18 @@ export function AdminPage() {
     } catch (error) {
       console.error('Error changing role:', error);
       alert('Ошибка при изменении роли');
+    }
+  };
+
+  const handleDeleteUserAvatar = async (userId: number) => {
+    if (!confirm('Вы уверены, что хотите удалить аватар этого пользователя?')) return;
+
+    try {
+      await api.users.deleteUserAvatar(userId);
+      loadData(page);
+    } catch (error) {
+      console.error('Error deleting user avatar:', error);
+      alert('Ошибка при удалении аватара');
     }
   };
 
@@ -182,138 +205,169 @@ export function AdminPage() {
           </div>
         </div>
 
-        <div className="p-6 min-h-[400px]">
+        <div className="p-6 min-h-[600px] flex flex-col">
           {loading ? (
-            <div className="flex flex-col items-center justify-center py-20 gap-4">
+            <div className="flex flex-col items-center justify-center flex-1 gap-4">
               <Loader className="w-10 h-10 text-amber-600 animate-spin" />
               <p className="text-gray-500 animate-pulse">Загрузка данных...</p>
             </div>
           ) : (
-            <div className="space-y-6">
+            <div className="flex flex-col flex-1">
               {/* Content Grid */}
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                {activeTab === 'books' && books.map(book => {
-                  const coverUrl = book.coverFile 
-                    ? (book.coverFile.startsWith('http') ? book.coverFile : `${API_BASE}${book.coverFile.startsWith('/') ? '' : '/'}${book.coverFile}`)
-                    : '/placeholder-book.png';
-                    
-                  return (
-                    <div key={book.id} className="group bg-gray-50 dark:bg-stone-900/40 rounded-2xl border border-amber-100 dark:border-stone-800 p-4 hover:shadow-lg transition-all">
-                      <div className="flex gap-4">
-                        <div className="w-20 h-28 flex-shrink-0 bg-amber-100 rounded-lg overflow-hidden shadow-sm">
-                          <img src={coverUrl} className="w-full h-full object-cover" alt="" />
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <h3 className="font-bold text-gray-900 dark:text-stone-100 truncate">{book.title}</h3>
-                          <p className="text-xs text-gray-500 dark:text-stone-400 mt-1 truncate">
-                            {book.authors.map(a => a.name).join(', ')}
-                          </p>
-                          <div className="flex gap-2 mt-4">
-                            <button onClick={() => setEditingBook(book)} className="p-2 bg-white dark:bg-stone-800 text-amber-600 rounded-lg hover:bg-amber-600 hover:text-white transition-all shadow-sm border border-amber-200 dark:border-stone-700">
-                              <Edit className="w-4 h-4" />
-                            </button>
-                            <button onClick={() => handleDelete(book.id, 'books')} className="p-2 bg-white dark:bg-stone-800 text-red-600 rounded-lg hover:bg-red-600 hover:text-white transition-all shadow-sm border border-red-200 dark:border-stone-700">
-                              <Trash2 className="w-4 h-4" />
-                            </button>
+              <div className="flex-1">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                  {activeTab === 'books' && books.map(book => {
+                    const coverUrl = book.coverFile 
+                      ? (book.coverFile.startsWith('http') ? book.coverFile : `${API_BASE}${book.coverFile.startsWith('/') ? '' : '/'}${book.coverFile}`)
+                      : '/placeholder-book.png';
+                      
+                    return (
+                      <div key={book.id} className="group bg-gray-50 dark:bg-stone-900/40 rounded-2xl border border-amber-100 dark:border-stone-800 p-4 hover:shadow-lg transition-all">
+                        <div className="flex gap-4">
+                          <div className="w-20 h-28 flex-shrink-0 bg-amber-100 rounded-lg overflow-hidden shadow-sm">
+                            <img src={coverUrl} className="w-full h-full object-cover" alt="" />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <h3 className="font-bold text-gray-900 dark:text-stone-100 truncate">{book.title}</h3>
+                            <p className="text-xs text-gray-500 dark:text-stone-400 mt-1 truncate">
+                              {book.authors.map(a => a.name).join(', ')}
+                            </p>
+                            <div className="flex gap-2 mt-4">
+                              <button onClick={() => setEditingBook(book)} className="p-2 bg-white dark:bg-stone-800 text-amber-600 rounded-lg hover:bg-amber-600 hover:text-white transition-all shadow-sm border border-amber-200 dark:border-stone-700">
+                                <Edit className="w-4 h-4" />
+                              </button>
+                              <button onClick={() => handleDelete(book.id, 'books')} className="p-2 bg-white dark:bg-stone-800 text-red-600 rounded-lg hover:bg-red-600 hover:text-white transition-all shadow-sm border border-red-200 dark:border-stone-700">
+                                <Trash2 className="w-4 h-4" />
+                              </button>
+                            </div>
                           </div>
                         </div>
                       </div>
-                    </div>
-                  );
-                })}
+                    );
+                  })}
 
-                {activeTab === 'authors' && authors.map(author => {
-                  const photoUrl = author.photo 
-                    ? (author.photo.startsWith('http') ? author.photo : `${API_BASE}${author.photo.startsWith('/') ? '' : '/'}${author.photo}`)
-                    : `https://ui-avatars.com/api/?name=${author.name}`;
+                  {activeTab === 'authors' && authors.map(author => {
+                    const photoUrl = author.photo 
+                      ? (author.photo.startsWith('http') ? author.photo : `${API_BASE}${author.photo.startsWith('/') ? '' : '/'}${author.photo}`)
+                      : `https://ui-avatars.com/api/?name=${author.name}`;
 
-                  return (
-                    <div key={author.id} className="bg-gray-50 dark:bg-stone-900/40 rounded-2xl border border-amber-100 dark:border-stone-800 p-5 flex items-center justify-between hover:shadow-md transition-shadow">
-                      <div className="flex items-center gap-4 min-w-0">
-                          <div className="w-12 h-12 rounded-full bg-amber-100 overflow-hidden border-2 border-white shadow-sm">
-                              <img src={photoUrl} className="w-full h-full object-cover" alt="" />
-                          </div>
-                          <span className="font-bold text-gray-900 dark:text-stone-100 truncate">{author.name}</span>
+                    return (
+                      <div key={author.id} className="bg-gray-50 dark:bg-stone-900/40 rounded-2xl border border-amber-100 dark:border-stone-800 p-5 flex items-center justify-between hover:shadow-md transition-shadow">
+                        <div className="flex items-center gap-4 min-w-0">
+                            <div className="w-12 h-12 rounded-full bg-amber-100 overflow-hidden border-2 border-white shadow-sm">
+                                <img src={photoUrl} className="w-full h-full object-cover" alt="" />
+                            </div>
+                            <span className="font-bold text-gray-900 dark:text-stone-100 truncate">{author.name}</span>
+                        </div>
+                        <div className="flex gap-1">
+                          <button onClick={() => setEditingAuthor(author)} className="p-2 text-amber-600 hover:bg-amber-100 dark:hover:bg-amber-900/20 rounded-lg transition-colors">
+                            <Edit className="w-4 h-4" />
+                          </button>
+                          <button onClick={() => handleDelete(author.id, 'authors')} className="p-2 text-red-600 hover:bg-red-100 dark:hover:bg-red-900/20 rounded-lg transition-colors">
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
                       </div>
+                    );
+                  })}
+
+                  {(activeTab === 'genres' || activeTab === 'tags') && (activeTab === 'genres' ? genres : tags).map(item => (
+                    <div key={item.id} className="bg-gray-50 dark:bg-stone-900/40 rounded-2xl border border-amber-100 dark:border-stone-800 p-4 flex items-center justify-between hover:shadow-md transition-shadow">
+                      <span className="font-bold text-gray-900 dark:text-stone-100 truncate text-sm px-2">{item.name}</span>
                       <div className="flex gap-1">
-                        <button onClick={() => setEditingAuthor(author)} className="p-2 text-amber-600 hover:bg-amber-100 dark:hover:bg-amber-900/20 rounded-lg transition-colors">
+                        <button 
+                          onClick={() => activeTab === 'genres' ? setEditingGenre(item as Genre) : setEditingTag(item as Tag)} 
+                          className="p-2 text-amber-600 hover:bg-amber-100 dark:hover:bg-amber-900/20 rounded-lg transition-colors"
+                        >
                           <Edit className="w-4 h-4" />
                         </button>
-                        <button onClick={() => handleDelete(author.id, 'authors')} className="p-2 text-red-600 hover:bg-red-100 dark:hover:bg-red-900/20 rounded-lg transition-colors">
+                        <button 
+                          onClick={() => handleDelete(item.id, activeTab)} 
+                          className="p-2 text-red-600 hover:bg-red-100 dark:hover:bg-red-900/20 rounded-lg transition-colors"
+                        >
                           <Trash2 className="w-4 h-4" />
                         </button>
                       </div>
                     </div>
-                  );
-                })}
+                  ))}
 
-                {(activeTab === 'genres' || activeTab === 'tags') && (activeTab === 'genres' ? genres : tags).map(item => (
-                  <div key={item.id} className="bg-gray-50 dark:bg-stone-900/40 rounded-2xl border border-amber-100 dark:border-stone-800 p-4 flex items-center justify-between hover:shadow-md transition-shadow">
-                    <span className="font-bold text-gray-900 dark:text-stone-100 truncate text-sm px-2">{item.name}</span>
-                    <div className="flex gap-1">
-                      <button 
-                        onClick={() => activeTab === 'genres' ? setEditingGenre(item as Genre) : setEditingTag(item as Tag)} 
-                        className="p-2 text-amber-600 hover:bg-amber-100 dark:hover:bg-amber-900/20 rounded-lg transition-colors"
-                      >
-                        <Edit className="w-4 h-4" />
-                      </button>
-                      <button 
-                        onClick={() => handleDelete(item.id, activeTab)} 
-                        className="p-2 text-red-600 hover:bg-red-100 dark:hover:bg-red-900/20 rounded-lg transition-colors"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-                    </div>
-                  </div>
-                ))}
-
-                {activeTab === 'users' && users.map(user => (
-                  <div key={user.id} className="bg-gray-50 dark:bg-stone-900/40 rounded-2xl border border-amber-100 dark:border-stone-800 p-4 hover:shadow-md transition-all">
-                    <div className="flex items-center gap-4 mb-4">
-                      <div className="w-12 h-12 rounded-full bg-amber-100 flex items-center justify-center text-amber-600 border-2 border-white shadow-sm">
-                        <UserIcon className="w-6 h-6" />
-                      </div>
-                      <div className="min-w-0 flex-1">
-                        <div className="flex items-center gap-2">
-                          <span className="font-bold text-gray-900 dark:text-stone-100 truncate">{user.login}</span>
-                          {user.role?.toLowerCase() === 'admin' && <ShieldCheck className="w-4 h-4 text-amber-600" title="Администратор" />}
+                  {activeTab === 'users' && users.map(user => (
+                    <div key={user.id} className="bg-gray-50 dark:bg-stone-900/40 rounded-2xl border border-amber-100 dark:border-stone-800 p-4 hover:shadow-md transition-all">
+                      <div className="flex items-center gap-4 mb-4">
+                        <div className="relative group">
+                          <div className="w-12 h-12 rounded-full bg-amber-100 flex items-center justify-center text-amber-600 border-2 border-white shadow-sm overflow-hidden">
+                            {user.avatarFile ? (
+                              <img 
+                                src={user.avatarFile.startsWith('http') ? user.avatarFile : `${API_BASE}${user.avatarFile}`}
+                                className="w-full h-full object-cover"
+                                alt=""
+                              />
+                            ) : (
+                              <UserIcon className="w-6 h-6" />
+                            )}
+                          </div>
+                          
+                          {user.avatarFile && (
+                            <button
+                              onClick={() => handleDeleteUserAvatar(user.id)}
+                              className="absolute -top-1 -right-1 p-1 bg-red-500 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-600"
+                              title="Удалить аватар"
+                            >
+                              <Trash2 className="w-2 h-2" />
+                            </button>
+                          )}
                         </div>
-                        <p className="text-xs text-gray-500 dark:text-stone-400 truncate">{user.email}</p>
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-center gap-2">
+                            <span className="font-bold text-gray-900 dark:text-stone-100 truncate">{user.login}</span>
+                            {user.role?.toLowerCase() === 'admin' && <ShieldCheck className="w-4 h-4 text-amber-600" title="Администратор" />}
+                          </div>
+                          <p className="text-xs text-gray-500 dark:text-stone-400 truncate">{user.email}</p>
+                        </div>
+                      </div>
+                      <div className="flex gap-2">
+                        {user.id !== currentUser?.id && (
+                          <>
+                            <button 
+                              onClick={() => handleRoleChange(user.id, user.role || 'User')} 
+                              className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-lg text-sm font-bold transition-all active:scale-95 ${
+                                user.role?.toLowerCase() === 'admin' 
+                                  ? 'bg-amber-600 text-white shadow-md shadow-amber-600/20' 
+                                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200 dark:bg-stone-800 dark:text-stone-300'
+                              }`}
+                              title={user.role?.toLowerCase() === 'admin' ? 'Разжаловать до пользователя' : 'Сделать администратором'}
+                            >
+                              {user.role?.toLowerCase() === 'admin' ? <ShieldCheck className="w-4 h-4" /> : <Shield className="w-4 h-4" />}
+                              {user.role?.toLowerCase() === 'admin' ? 'Админ' : 'Сделать админом'}
+                            </button>
+                            <button 
+                              onClick={() => handleDelete(user.id, 'users')} 
+                              className="p-2 text-red-600 hover:bg-red-100 dark:hover:bg-red-900/20 rounded-lg transition-colors border border-transparent hover:border-red-200 shadow-sm"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          </>
+                        )}
+                        {user.id === currentUser?.id && (
+                            <div className="flex-1 py-2 px-4 bg-amber-50 dark:bg-stone-800/50 rounded-lg text-xs text-amber-700 dark:text-amber-500 font-medium text-center border border-amber-100 dark:border-stone-700">
+                                Это ваша учетная запись
+                            </div>
+                        )}
                       </div>
                     </div>
-                    <div className="flex gap-2">
-                      <button 
-                        onClick={() => handleRoleChange(user.id, user.role || 'User')} 
-                        className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-lg text-sm font-bold transition-all active:scale-95 ${
-                          user.role?.toLowerCase() === 'admin' 
-                            ? 'bg-amber-600 text-white shadow-md shadow-amber-600/20' 
-                            : 'bg-gray-100 text-gray-700 hover:bg-gray-200 dark:bg-stone-800 dark:text-stone-300'
-                        }`}
-                        title={user.role?.toLowerCase() === 'admin' ? 'Разжаловать до пользователя' : 'Сделать администратором'}
-                      >
-                        {user.role?.toLowerCase() === 'admin' ? <ShieldCheck className="w-4 h-4" /> : <Shield className="w-4 h-4" />}
-                        {user.role?.toLowerCase() === 'admin' ? 'Админ' : 'Сделать админом'}
-                      </button>
-                      <button 
-                        onClick={() => handleDelete(user.id, 'users')} 
-                        className="p-2 text-red-600 hover:bg-red-100 dark:hover:bg-red-900/20 rounded-lg transition-colors border border-transparent hover:border-red-200 shadow-sm"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-
-              {totalCount === 0 && !loading && (
-                <div className="text-center py-20">
-                  <div className="inline-flex p-6 bg-gray-100 dark:bg-stone-900 rounded-full mb-4">
-                    <Search className="w-10 h-10 text-gray-400" />
-                  </div>
-                  <h3 className="text-xl font-bold text-gray-900 dark:text-stone-100">Ничего не найдено</h3>
-                  <p className="text-gray-500 mt-2">Попробуйте изменить параметры поиска</p>
+                  ))}
                 </div>
-              )}
+
+                {totalCount === 0 && !loading && (
+                  <div className="text-center py-20">
+                    <div className="inline-flex p-6 bg-gray-100 dark:bg-stone-900 rounded-full mb-4">
+                      <Search className="w-10 h-10 text-gray-400" />
+                    </div>
+                    <h3 className="text-xl font-bold text-gray-900 dark:text-stone-100">Ничего не найдено</h3>
+                    <p className="text-gray-500 mt-2">Попробуйте изменить параметры поиска</p>
+                  </div>
+                )}
+              </div>
 
               {/* Pagination */}
               {totalPages > 1 && (

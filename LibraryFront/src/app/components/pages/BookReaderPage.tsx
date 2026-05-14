@@ -158,6 +158,12 @@ function splitTextToPages(text: string, pageSize: number) {
   return chunks.length > 0 ? chunks : [text.trim()];
 }
 
+const themeClasses: Record<string, string> = {
+  light: 'bg-[#faf8f5]',
+  dark: 'bg-[#1c1917]',
+  sepia: 'bg-[#f5f1e8]',
+};
+
 export function BookReaderPage({ bookId, onBack }: BookReaderPageProps) {
   const { user } = useAuth();
   const { theme: appTheme, setTheme } = useTheme();
@@ -167,6 +173,9 @@ export function BookReaderPage({ bookId, onBack }: BookReaderPageProps) {
   const epubBookRef = useRef<any>(null);
   const epubRenditionRef = useRef<any>(null);
   const initialLoadRef = useRef(true);
+  const currentPageRef = useRef(1);
+  const latestEpubCfiRef = useRef<string | null>(null);
+  const epubLocationsGenerationRef = useRef(0);
 
   const [book, setBook] = useState<Book | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
@@ -193,12 +202,25 @@ export function BookReaderPage({ bookId, onBack }: BookReaderPageProps) {
 
   useEffect(() => {
     setPageInput(currentPage.toString());
+    currentPageRef.current = currentPage;
   }, [currentPage]);
 
   useEffect(() => {
     if (rawText) {
+      const currentOffset = textPages.slice(0, currentPage - 1).reduce((acc, p) => acc + p.length, 0);
       const pages = splitTextToPages(rawText, settings.pageSize);
       setTextPages(pages);
+      
+      let newPage = 1;
+      let acc = 0;
+      for (let i = 0; i < pages.length; i++) {
+        if (acc + pages[i].length > currentOffset) {
+          newPage = i + 1;
+          break;
+        }
+        acc += pages[i].length;
+      }
+      setCurrentPage(newPage);
     }
   }, [settings.pageSize]);
 
@@ -223,6 +245,8 @@ export function BookReaderPage({ bookId, onBack }: BookReaderPageProps) {
     setRawText('');
     setEpubTotalPages(0);
     setEpubReady(false);
+    initialLoadRef.current = true;
+    latestEpubCfiRef.current = null;
 
     if (textViewerTypes.includes(type)) {
       loadTextFile(formattedFileUrl, type);
@@ -253,9 +277,10 @@ export function BookReaderPage({ bookId, onBack }: BookReaderPageProps) {
     epubRenditionRef.current = rendition;
 
     rendition.on('relocated', (location: any) => {
-      const page = location?.start?.location >= 0 ? location.start.location + 1 : 1;
-      console.log('EPUB relocated to:', page);
-      setCurrentPage(page);
+      const cfi = location?.start?.cfi;
+      if (cfi) {
+        latestEpubCfiRef.current = cfi;
+      }
     });
 
     rendition.display().then(() => {
@@ -263,18 +288,6 @@ export function BookReaderPage({ bookId, onBack }: BookReaderPageProps) {
       setEpubReady(true);
       applyEpubTheme();
       
-      if (initialLoadRef.current && currentPage > 1) {
-        console.log('EPUB: Jumping to initial page:', currentPage);
-        initialLoadRef.current = false;
-        setTimeout(() => {
-          if (epubBook.locations.length() > 0) {
-            const cfi = epubBook.locations.cfiFromLocation(currentPage - 1);
-            rendition.display(cfi);
-          }
-        }, 500);
-      } else {
-        initialLoadRef.current = false;
-      }
     }).catch(err => {
       console.error('EPUB Error:', err);
       setReaderError('Ошибка при отрисовке книги.');
@@ -282,15 +295,7 @@ export function BookReaderPage({ bookId, onBack }: BookReaderPageProps) {
 
     epubBook.ready.then(() => {
       console.log('EPUB: Book ready');
-      return epubBook.locations.generate(1000);
-    }).then(() => {
-      const total = epubBook.locations.length() || 1;
-      setEpubTotalPages(total);
-      console.log('EPUB: Locations generated, total:', total);
-      
-      if (book && user && user.role !== 'guest') {
-        api.users.updateReadingProgress(bookId, currentPage, total);
-      }
+      return generateEpubLocations(currentPageRef.current);
     });
 
     return () => {
@@ -299,12 +304,49 @@ export function BookReaderPage({ bookId, onBack }: BookReaderPageProps) {
       epubBook.destroy();
       epubBookRef.current = null;
       epubRenditionRef.current = null;
+      latestEpubCfiRef.current = null;
     };
   }, [viewerType, fileUrl, container]);
 
   useEffect(() => {
+    const currentCfi = epubRenditionRef.current?.currentLocation()?.start?.cfi;
     applyEpubTheme();
+    const anchorCfi = currentCfi || latestEpubCfiRef.current;
+
+    if (canNavigateEpub && epubReady && anchorCfi) {
+      window.requestAnimationFrame(() => {
+        epubRenditionRef.current?.display(anchorCfi);
+      });
+    }
   }, [settings.fontSize, settings.fontFamily, settings.lineHeight, settings.theme, epubReady]);
+
+  useEffect(() => {
+    if (!canNavigateEpub || !epubReady || !epubBookRef.current) return;
+
+    const currentCfi = epubRenditionRef.current?.currentLocation()?.start?.cfi || latestEpubCfiRef.current;
+    generateEpubLocations(currentPageRef.current, currentCfi);
+  }, [settings.pageSize, canNavigateEpub, epubReady]);
+
+  useEffect(() => {
+    if (!canNavigateEpub || !epubReady) return;
+
+    let resizeTimer: number | undefined;
+    const keepEpubAnchorOnResize = () => {
+      window.clearTimeout(resizeTimer);
+      resizeTimer = window.setTimeout(() => {
+        const cfi = latestEpubCfiRef.current || getEpubCfiForPage(currentPageRef.current);
+        if (cfi) {
+          epubRenditionRef.current?.display(cfi);
+        }
+      }, 150);
+    };
+
+    window.addEventListener('resize', keepEpubAnchorOnResize);
+    return () => {
+      window.clearTimeout(resizeTimer);
+      window.removeEventListener('resize', keepEpubAnchorOnResize);
+    };
+  }, [canNavigateEpub, epubReady]);
 
   useEffect(() => {
     if (book && user && user.role !== 'guest' && canNavigate) {
@@ -331,6 +373,46 @@ export function BookReaderPage({ bookId, onBack }: BookReaderPageProps) {
 
   const scrollReaderToTop = () => {
     readerTopRef.current?.scrollIntoView({ block: 'start' });
+  };
+
+  const getEpubCfiForPage = (page: number) => {
+    const epubBook = epubBookRef.current;
+    if (!epubBook || epubBook.locations.length() === 0) return null;
+
+    const targetPage = Math.max(1, Math.min(page, epubBook.locations.length()));
+    const cfi = epubBook.locations.cfiFromLocation(targetPage - 1);
+    return typeof cfi === 'string' ? cfi : null;
+  };
+
+  const generateEpubLocations = async (targetPage: number, targetCfi?: string | null) => {
+    const epubBook = epubBookRef.current;
+    const rendition = epubRenditionRef.current;
+    if (!epubBook) return;
+
+    const generationId = ++epubLocationsGenerationRef.current;
+    epubBook.locations.load([]);
+    await epubBook.locations.generate(settings.pageSize);
+
+    if (generationId !== epubLocationsGenerationRef.current) return;
+
+    const total = epubBook.locations.length() || 1;
+    setEpubTotalPages(total);
+    console.log('EPUB: Character locations generated, total:', total);
+
+    const page = Math.max(1, Math.min(targetPage || 1, total));
+    const cfi = targetCfi || getEpubCfiForPage(page);
+
+    setCurrentPage(page);
+    if (cfi && rendition) {
+      latestEpubCfiRef.current = cfi;
+      await rendition.display(cfi);
+    }
+
+    initialLoadRef.current = false;
+
+    if (book && user && user.role !== 'guest') {
+      api.users.updateReadingProgress(bookId, page, total);
+    }
   };
 
   const applyEpubTheme = () => {
@@ -364,11 +446,12 @@ export function BookReaderPage({ bookId, onBack }: BookReaderPageProps) {
       const data = await api.books.getById(bookId);
       setBook(data);
 
+      let savedPage = 1;
       if (user && user.role !== 'guest') {
         try {
           const progressData = await api.users.getProgress(bookId);
           if (progressData) {
-            setCurrentPage(progressData.page || 1);
+            savedPage = progressData.page || 1;
           }
         } catch (err) {
           console.error('Error loading progress:', err);
@@ -376,9 +459,10 @@ export function BookReaderPage({ bookId, onBack }: BookReaderPageProps) {
       } else {
         const savedProgress = JSON.parse(localStorage.getItem('library_reading_progress') || '{}');
         if (savedProgress[bookId]) {
-          setCurrentPage(savedProgress[bookId].page || 1);
+          savedPage = savedProgress[bookId].page || 1;
         }
       }
+      setCurrentPage(savedPage);
     } catch (error) {
       console.error('Error loading book:', error);
       setReaderError('Не удалось загрузить книгу.');
@@ -402,7 +486,7 @@ export function BookReaderPage({ bookId, onBack }: BookReaderPageProps) {
       const pages = splitTextToPages(text, settings.pageSize);
       setRawText(text);
       setTextPages(pages);
-      setCurrentPage(1);
+      // We don't call setCurrentPage(1) here to preserve loaded progress
     } catch (error) {
       console.error('Error loading book text:', error);
       const fallbackText = 'Не удалось загрузить содержимое книги. Проверьте, что файл доступен на сервере.';
@@ -443,7 +527,18 @@ export function BookReaderPage({ bookId, onBack }: BookReaderPageProps) {
         await api.bookmarks.update(editingBookmark.id, bookmarkNote);
         setBookmarks(bookmarks.map(b => b.id === editingBookmark.id ? { ...b, note: bookmarkNote } : b));
       } else {
-        const bookmark = await api.bookmarks.create(bookId, currentPage, bookmarkNote);
+        let cfi = undefined;
+        let charOffset = undefined;
+
+        if (canNavigateEpub && epubRenditionRef.current) {
+          const location = epubRenditionRef.current.currentLocation();
+          cfi = location?.start?.cfi;
+          charOffset = (currentPage - 1) * settings.pageSize;
+        } else if (canNavigateText) {
+          charOffset = textPages.slice(0, currentPage - 1).reduce((acc, p) => acc + p.length, 0);
+        }
+
+        const bookmark = await api.bookmarks.create(bookId, currentPage, bookmarkNote, cfi, charOffset);
         setBookmarks([...bookmarks, bookmark]);
       }
       setShowBookmarkModal(false);
@@ -473,11 +568,10 @@ export function BookReaderPage({ bookId, onBack }: BookReaderPageProps) {
 
     if (canNavigateEpub && epubBookRef.current && epubRenditionRef.current) {
       try {
-        if (epubBookRef.current.locations.length() > 0) {
-          const cfi = epubBookRef.current.locations.cfiFromLocation(Math.max(0, targetPage - 1));
-          if (cfi) {
-            epubRenditionRef.current.display(cfi);
-          }
+        const cfi = getEpubCfiForPage(targetPage);
+        if (cfi) {
+          latestEpubCfiRef.current = cfi;
+          epubRenditionRef.current.display(cfi);
         }
       } catch (err) {
         console.error('Error navigating to page:', err);
@@ -500,14 +594,34 @@ export function BookReaderPage({ bookId, onBack }: BookReaderPageProps) {
     }
   };
 
-  const handleGoToBookmark = (page: number) => {
-    goToPage(page);
+  const handleGoToBookmark = (bookmark: Bookmark) => {
+    if (canNavigateEpub && bookmark.cfi && epubRenditionRef.current) {
+      const targetPage = bookmark.charOffset !== undefined && bookmark.charOffset !== null
+        ? Math.floor(bookmark.charOffset / settings.pageSize) + 1
+        : bookmark.page;
+      setCurrentPage(Math.max(1, Math.min(targetPage, totalPages)));
+      latestEpubCfiRef.current = bookmark.cfi;
+      epubRenditionRef.current.display(bookmark.cfi);
+    } else if (canNavigateText && bookmark.charOffset !== undefined) {
+      let currentTotal = 0;
+      let targetPage = 1;
+      for (let i = 0; i < textPages.length; i++) {
+        if (currentTotal + textPages[i].length > bookmark.charOffset) {
+          targetPage = i + 1;
+          break;
+        }
+        currentTotal += textPages[i].length;
+      }
+      goToPage(targetPage);
+    } else {
+      goToPage(bookmark.page);
+    }
     setShowBookmarks(false);
   };
 
   const nextPage = () => {
     if (canNavigateEpub) {
-      epubRenditionRef.current?.next();
+      goToPage(currentPage + 1);
       return;
     }
 
@@ -519,7 +633,7 @@ export function BookReaderPage({ bookId, onBack }: BookReaderPageProps) {
 
   const prevPage = () => {
     if (canNavigateEpub) {
-      epubRenditionRef.current?.prev();
+      goToPage(currentPage - 1);
       return;
     }
 
@@ -537,13 +651,43 @@ export function BookReaderPage({ bookId, onBack }: BookReaderPageProps) {
     );
   }
 
-  const themeClasses = {
-    light: 'bg-[#faf8f5] text-gray-900',
-    dark: 'bg-[#1c1917] text-stone-100',
-    sepia: 'bg-[#f5f1e8] text-stone-900',
+  const getBookmarkPage = (bookmark: Bookmark) => {
+    if (canNavigateText && bookmark.charOffset !== undefined) {
+      let acc = 0;
+      for (let i = 0; i < textPages.length; i++) {
+        if (acc + textPages[i].length > bookmark.charOffset) {
+          return i + 1;
+        }
+        acc += textPages[i].length;
+      }
+      return textPages.length || 1;
+    }
+
+    if (canNavigateEpub && bookmark.charOffset !== undefined && bookmark.charOffset !== null) {
+      return Math.max(1, Math.min(Math.floor(bookmark.charOffset / settings.pageSize) + 1, totalPages));
+    }
+    
+    return bookmark.page;
   };
 
-  const currentBookmark = Array.isArray(bookmarks) ? bookmarks.find((b) => b.page === currentPage) : null;
+  const currentBookmark = (() => {
+    if (!Array.isArray(bookmarks)) return null;
+    
+    if (canNavigateText) {
+      const pageStartOffset = textPages.slice(0, currentPage - 1).reduce((acc, p) => acc + p.length, 0);
+      const pageEndOffset = pageStartOffset + (textPages[currentPage - 1]?.length || 0);
+      
+      return bookmarks.find(b => {
+        if (b.charOffset !== undefined && b.charOffset !== null) {
+          return b.charOffset >= pageStartOffset && b.charOffset < pageEndOffset;
+        }
+        return b.page === currentPage;
+      });
+    }
+
+    return bookmarks.find(b => getBookmarkPage(b) === currentPage);
+  })();
+
   const pageText = textPages[currentPage - 1] || rawText;
   const isDarkReader = settings.theme === 'dark';
   const isSepiaReader = settings.theme === 'sepia';
@@ -715,8 +859,8 @@ export function BookReaderPage({ bookId, onBack }: BookReaderPageProps) {
                 bookmarks.map((bookmark) => (
                   <div key={bookmark.id} className="p-3 border border-amber-200 dark:border-stone-700 rounded-lg hover:bg-amber-50/50 dark:hover:bg-stone-700/50">
                     <div className="flex items-start justify-between">
-                      <button onClick={() => handleGoToBookmark(bookmark.page)} className="flex-1 text-left">
-                        <p className="font-medium text-gray-900 dark:text-stone-100">Страница {bookmark.page}</p>
+                      <button onClick={() => handleGoToBookmark(bookmark)} className="flex-1 text-left">
+                        <p className="font-medium text-gray-900 dark:text-stone-100">Страница {getBookmarkPage(bookmark)}</p>
                         {bookmark.note && <p className="text-sm text-gray-600 dark:text-stone-400 mt-1">{bookmark.note}</p>}
                       </button>
                       <div className="flex gap-1 ml-2">

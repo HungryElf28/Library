@@ -1,13 +1,16 @@
-import React, { useState } from 'react';
-import { User, Moon, Sun, CreditCard, CheckCircle, Calendar } from 'lucide-react';
+import React, { useState, useRef } from 'react';
+import { User, Moon, Sun, CreditCard, CheckCircle, Calendar, Camera, Trash2, Loader } from 'lucide-react';
 import { useAuth } from '../../../contexts/AuthContext';
 import { useTheme } from '../../../contexts/ThemeContext';
 import { api } from '../../../services/api';
+import { API_BASE } from '../../../config';
 
 export function SettingsPage() {
   const { user, refreshUser } = useAuth();
   const { theme, setTheme } = useTheme();
   const [subscribing, setSubscribing] = useState(false);
+  const [isUpdatingAvatar, setIsUpdatingAvatar] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleToggleSubscription = async (isSubscribed: boolean) => {
     setSubscribing(true);
@@ -21,26 +24,104 @@ export function SettingsPage() {
     }
   };
 
+  const handleAvatarClick = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    const formData = new FormData();
+    formData.append('file', file);
+
+    setIsUpdatingAvatar(true);
+    try {
+      await api.users.updateAvatar(formData);
+      await refreshUser();
+    } catch (error) {
+      console.error('Error updating avatar:', error);
+      alert('Ошибка при обновлении аватара');
+    } finally {
+      setIsUpdatingAvatar(false);
+      if (fileInputRef.current) fileInputRef.current.value = '';
+    }
+  };
+
+  const handleDeleteAvatar = async () => {
+    if (!window.confirm('Вы уверены, что хотите удалить аватар?')) return;
+
+    setIsUpdatingAvatar(true);
+    try {
+      await api.users.deleteAvatar();
+      await refreshUser();
+    } catch (error) {
+      console.error('Error deleting avatar:', error);
+      alert('Ошибка при удалении аватара');
+    } finally {
+      setIsUpdatingAvatar(false);
+    }
+  };
+
   return (
     <div>
       <div className="bg-card rounded-lg shadow-sm border border-amber-200 dark:border-stone-700 p-6 mb-6">
-        <div className="flex items-center gap-4">
-          <div className="w-16 h-16 bg-gradient-to-br from-amber-500 to-orange-600 rounded-full flex items-center justify-center shadow-lg border-2 border-white dark:border-stone-800">
-            <User className="w-8 h-8 text-white" />
+        <div className="flex items-center gap-6">
+          <div className="relative group">
+            <div 
+              onClick={handleAvatarClick}
+              className={`w-20 h-20 rounded-full overflow-hidden flex items-center justify-center cursor-pointer transition-all border-2 border-white dark:border-stone-800 shadow-lg ${
+                isUpdatingAvatar ? 'opacity-50' : 'hover:ring-4 hover:ring-amber-200 dark:hover:ring-stone-600'
+              } ${user?.avatarFile ? '' : 'bg-gradient-to-br from-amber-500 to-orange-600'}`}
+            >
+              {user?.avatarFile ? (
+                <img 
+                  src={user.avatarFile.startsWith('http') ? user.avatarFile : `${API_BASE}${user.avatarFile}`}
+                  alt={user.login}
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                <User className="w-10 h-10 text-white" />
+              )}
+              
+              <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                <Camera className="w-6 h-6 text-white" />
+              </div>
+
+              {isUpdatingAvatar && (
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <Loader className="w-6 h-6 text-amber-600 animate-spin" />
+                </div>
+              )}
+            </div>
+            
+            <input
+              type="file"
+              ref={fileInputRef}
+              onChange={handleFileChange}
+              className="hidden"
+              accept="image/*"
+            />
           </div>
           <div>
             <h1 className="text-2xl font-bold text-gray-900 dark:text-stone-100">{user?.login}</h1>
             <p className="text-gray-600 dark:text-stone-400">{user?.email}</p>
-            <p className="text-sm text-gray-500 dark:text-stone-500 mt-1 flex items-center gap-2">
-              <span className={`w-2 h-2 rounded-full ${user?.role === 'admin' ? 'bg-amber-500' : 'bg-green-500'}`} />
-              {user?.role === 'admin' ? 'Администратор' : 'Пользователь'}
-              {user?.isSubscribed && (
-                <span className="flex items-center gap-1 text-amber-600 font-bold ml-2">
-                  <CheckCircle className="w-4 h-4" />
-                  Подписка активна
-                </span>
+            <div className="flex items-center gap-2 mt-2">
+              <button 
+                onClick={handleAvatarClick}
+                className="text-xs font-bold text-amber-600 dark:text-amber-500 hover:underline flex items-center gap-1"
+              >
+                <Camera className="w-3 h-3" /> Изменить аватар
+              </button>
+              {user?.avatarFile && (
+                <button 
+                  onClick={handleDeleteAvatar}
+                  className="text-xs font-bold text-red-600 dark:text-red-400 hover:underline flex items-center gap-1 ml-2"
+                >
+                  <Trash2 className="w-3 h-3" /> Удалить
+                </button>
               )}
-            </p>
+            </div>
           </div>
         </div>
       </div>
