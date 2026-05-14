@@ -8,6 +8,8 @@ public partial class ReadingBook
 
     public int Page { get; set; }
 
+    public int? CharOffset { get; set; }
+
     public int TotalPages { get; set; }
 
     public DateTime LastOpened { get; set; } = DateTime.UtcNow;

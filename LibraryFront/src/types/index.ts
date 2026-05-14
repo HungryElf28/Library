@@ -65,6 +65,7 @@ export interface ReadingBook {
   title: string;
   coverFile?: string;
   page: number;
+  charOffset?: number;
   lastOpened: string;
   progress: number;
 }

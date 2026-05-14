@@ -37,9 +37,9 @@ namespace Library.Application.Services
             return await _repo.GetReadingAsync(userId);
         }
 
-        public async Task SaveProgress(int userId, int bookId, int page, int totalPages)
+        public async Task SaveProgress(int userId, int bookId, int page, int? charOffset, int totalPages)
         {
-            await _repo.SaveProgressAsync(userId, bookId, page, totalPages);
+            await _repo.SaveProgressAsync(userId, bookId, page, charOffset, totalPages);
         }
 
         public async Task<ReadingBook?> GetProgress(int userId, int bookId)

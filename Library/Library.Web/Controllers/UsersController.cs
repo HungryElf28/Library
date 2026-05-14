@@ -113,7 +113,7 @@ namespace Library.Web.Controllers
         public async Task<IActionResult> SaveProgress(int bookId, [FromBody] ReadingProgressDto dto)
         {
             var userId = User.GetUserId();
-            await _service.SaveProgress(userId, bookId, dto.Page, dto.TotalPages);
+            await _service.SaveProgress(userId, bookId, dto.Page, dto.CharOffset, dto.TotalPages);
             return Ok();
         }
 
@@ -273,6 +273,7 @@ namespace Library.Web.Controllers
     public class ReadingProgressDto
     {
         public int Page { get; set; }
+        public int? CharOffset { get; set; }
         public int TotalPages { get; set; }
     }
 }

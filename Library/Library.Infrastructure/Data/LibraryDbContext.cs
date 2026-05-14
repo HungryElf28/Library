@@ -223,6 +223,7 @@ public partial class LibraryDbContext : DbContext
                 .HasColumnName("last_opened")
                 .HasDefaultValueSql("CURRENT_TIMESTAMP");
             entity.Property(e => e.Page).HasColumnName("page");
+            entity.Property(e => e.CharOffset).HasColumnName("char_offset");
             entity.Property(e => e.TotalPages).HasColumnName("total_pages");
 
             entity.HasOne(d => d.Book).WithMany(p => p.ReadingBooks)

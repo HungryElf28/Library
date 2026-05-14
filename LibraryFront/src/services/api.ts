@@ -376,10 +376,10 @@ export const api = {
       return safeJsonResponse<PaginatedResponse<ReadingBook>>(response);
     },
 
-    async saveProgress(bookId: number, page: number, totalPages: number): Promise<void> {
+    async saveProgress(bookId: number, page: number, charOffset: number | undefined, totalPages: number): Promise<void> {
       await fetchWithAuth(`${API_BASE}/api/Users/reading/${bookId}`, {
         method: 'POST',
-        body: JSON.stringify({ page, totalPages }),
+        body: JSON.stringify({ page, charOffset, totalPages }),
       });
     },
 
@@ -440,14 +440,15 @@ export const api = {
       });
     },
 
-    async updateReadingProgress(bookId: number, page: number, totalPages: number): Promise<void> {
-      await api.users.saveProgress(bookId, page, totalPages);
+    async updateReadingProgress(bookId: number, page: number, charOffset: number | undefined, totalPages: number): Promise<void> {
+      await api.users.saveProgress(bookId, page, charOffset, totalPages);
 
       const progress = JSON.parse(localStorage.getItem(READING_PROGRESS_KEY) || '{}');
       progress[bookId] = {
         page,
+        charOffset,
         lastOpened: new Date().toISOString().split('T')[0],
-        progress: Math.round((page / totalPages) * 100),
+        progress: totalPages > 0 ? Math.round((page / totalPages) * 100) : 0,
       };
       localStorage.setItem(READING_PROGRESS_KEY, JSON.stringify(progress));
     },

@@ -151,12 +151,12 @@ public class UserRepository : IUserRepository
             .FirstAsync();
     }
 
-    public async Task SaveProgressAsync(int userId, int bookId, int page, int totalPages)
+    public async Task SaveProgressAsync(int userId, int bookId, int page, int? charOffset, int totalPages)
     {
+        var now = DateTime.UtcNow;
+
         var entity = await _context.ReadingBooks
             .FirstOrDefaultAsync(r => r.UserId == userId && r.BookId == bookId);
-
-        var now = DateTime.UtcNow;
 
         if (entity == null)
         {
@@ -165,6 +165,7 @@ public class UserRepository : IUserRepository
                 UserId = userId,
                 BookId = bookId,
                 Page = page,
+                CharOffset = charOffset,
                 TotalPages = totalPages,
                 LastOpened = now
             };
@@ -180,6 +181,7 @@ public class UserRepository : IUserRepository
         else
         {
             entity.Page = page;
+            entity.CharOffset = charOffset;
             if (totalPages > 0)
             {
                 entity.TotalPages = totalPages;
@@ -203,6 +205,7 @@ public class UserRepository : IUserRepository
             r.Book.Title,
             r.Book.CoverFile,
             r.Page,
+            r.CharOffset,
             r.TotalPages,
             r.LastOpened
         );
@@ -218,6 +221,7 @@ public class UserRepository : IUserRepository
                 r.Book.Title,
                 r.Book.CoverFile,
                 r.Page,
+                r.CharOffset,
                 r.TotalPages,
                 r.LastOpened
             ))

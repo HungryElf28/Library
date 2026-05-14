@@ -297,6 +297,10 @@ namespace Library.Infrastructure.Migrations
                         .HasColumnType("integer")
                         .HasColumnName("page");
 
+                    b.Property<int?>("CharOffset")
+                        .HasColumnType("integer")
+                        .HasColumnName("char_offset");
+
                     b.Property<int>("TotalPages")
                         .HasColumnType("integer")
                         .HasColumnName("total_pages");

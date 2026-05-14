@@ -140,12 +140,15 @@ public class BookRepository : IBookRepository
             .ToLower()
             .Split(' ', StringSplitOptions.RemoveEmptyEntries);
 
+        if (terms.Length == 0) return new List<SearchProjection>();
+
         var booksQuery = _context.Books
             .Include(b => b.Authors)
             .Include(b => b.Genres)
             .Include(b => b.Reviews)
             .AsQueryable();
 
+        // Perform search
         var results = await booksQuery
             .Select(b => new
             {
@@ -154,15 +157,18 @@ public class BookRepository : IBookRepository
                 AuthorSimilarity = b.Authors.Any()
                     ? b.Authors.Max(a => (double?)EF.Functions.TrigramsSimilarity(a.Name, query)) ?? 0
                     : 0,
-                TitleContains = EF.Functions.ILike(b.Title, $"%{query}%")
+                MatchesTerms = terms.All(t => 
+                    EF.Functions.ILike(b.Title, $"%{t}%") || 
+                    b.Authors.Any(a => EF.Functions.ILike(a.Name, $"%{t}%"))
+                )
             })
             .Where(x =>
-                x.TitleContains ||
-                x.TitleSimilarity > 0.2 ||
-                x.Book.Authors.Any(a => EF.Functions.ILike(a.Name, $"%{query}%") || EF.Functions.TrigramsSimilarity(a.Name, query) > 0.2)
+                x.MatchesTerms ||
+                x.TitleSimilarity > 0.1 ||
+                x.AuthorSimilarity > 0.1
             )
-            .OrderByDescending(x => (x.TitleContains ? 2.0 : 0) + (x.TitleSimilarity * 1.5) + (x.AuthorSimilarity * 1.0))
-            .Take(20)
+            .OrderByDescending(x => (x.MatchesTerms ? 2.0 : 0) + (x.TitleSimilarity * 1.5) + (x.AuthorSimilarity * 1.0))
+            .Take(30)
             .ToListAsync();
 
         return results.Select(x =>
@@ -177,8 +183,8 @@ public class BookRepository : IBookRepository
                 AuthorNames = b.Authors.Select(a => a.Name).ToList(),
                 GenreNames = b.Genres.Select(g => g.Name).ToList(),
                 AverageRating = b.Reviews.Any() ? b.Reviews.Average(r => (double)r.Rate) : 0,
-                Score = (x.TitleContains ? 2.0 : 0) + (x.TitleSimilarity * 1.5) + (x.AuthorSimilarity * 1.0),
-                TitleSimilarity = Math.Max(x.TitleSimilarity, x.TitleContains ? 1.0 : 0)
+                Score = (x.MatchesTerms ? 2.0 : 0) + (x.TitleSimilarity * 1.5) + (x.AuthorSimilarity * 1.0),
+                TitleSimilarity = Math.Max(x.TitleSimilarity, x.MatchesTerms ? 1.0 : 0)
             };
         })
         .ToList();
