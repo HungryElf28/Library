@@ -138,7 +138,7 @@ namespace Library.Web.Controllers
 
         [Authorize]
         [HttpPost("avatar")]
-        public async Task<IActionResult> UpdateAvatar([FromForm] IFormFile file)
+        public async Task<IActionResult> UpdateAvatar(IFormFile file)
         {
             if (file == null) return BadRequest("No file uploaded");
 
