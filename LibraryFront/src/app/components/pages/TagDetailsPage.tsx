@@ -20,7 +20,7 @@ export function TagDetailsPage({ tagId, onBookClick, onBack }: TagDetailsPagePro
   const [pagination, setPagination] = useState({
     total: 0,
     page: 1,
-    pageSize: 12,
+    pageSize: 15,
   });
 
   useEffect(() => {

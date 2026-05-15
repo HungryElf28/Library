@@ -20,7 +20,7 @@ export function GenreDetailsPage({ genreId, onBookClick, onBack }: GenreDetailsP
   const [pagination, setPagination] = useState({
     total: 0,
     page: 1,
-    pageSize: 12,
+    pageSize: 15,
   });
 
   useEffect(() => {
