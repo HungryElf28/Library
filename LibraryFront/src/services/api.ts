@@ -24,6 +24,7 @@ import {
   ReadingBook,
   Collection,
   Bookmark,
+  SearchProjection,
 } from '../types';
 import { API_BASE } from '../config';
 

@@ -20,9 +20,16 @@ export function HomePage({ onBookClick, onNavigate }: HomePageProps) {
   const [randomAuthor, setRandomAuthor] = useState<Author | null>(null);
   const [favorites, setFavorites] = useState<number[]>([]);
   const [loading, setLoading] = useState(true);
+  const [showHero, setShowHero] = useState(true);
 
   useEffect(() => {
     loadInitialData();
+
+    const timer = setTimeout(() => {
+      setShowHero(false);
+    }, 10000);
+
+    return () => clearTimeout(timer);
   }, [user]);
 
   const loadInitialData = async () => {
@@ -101,12 +108,14 @@ export function HomePage({ onBookClick, onNavigate }: HomePageProps) {
   return (
     <div className="space-y-12">
       {/* Hero Section */}
-      <section className="bg-amber-600 rounded-2xl p-8 text-white">
-        <h1 className="text-4xl font-bold mb-4">Добро пожаловать в Library</h1>
-        <p className="text-lg opacity-90 max-w-2xl">
-          Ваша персональная цифровая библиотека. Читайте, сохраняйте и открывайте для себя новые книги.
-        </p>
-      </section>
+      {showHero && (
+        <section className="bg-amber-600 rounded-2xl p-8 text-white transition-all duration-500 overflow-hidden">
+          <h1 className="text-4xl font-bold mb-4">Добро пожаловать в Library</h1>
+          <p className="text-lg opacity-90 max-w-2xl">
+            Ваша персональная цифровая библиотека. Читайте, сохраняйте и открывайте для себя новые книги.
+          </p>
+        </section>
+      )}
 
       {/* Global Most Read */}
       <BookSection
