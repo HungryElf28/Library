@@ -13,14 +13,16 @@ interface ProfilePageProps {
   initialTab?: 'favorites' | 'reading';
 }
 
-export function ProfilePage({ onBookClick, onStartReading, initialTab = 'favorites' }: ProfilePageProps) {
+export function ProfilePage({ onBookClick, onStartReading, initialTab }: ProfilePageProps) {
   const { user, refreshUser } = useAuth();
-  const [activeTab, setActiveTab] = useState<'favorites' | 'reading'>(initialTab);
+  const [activeTab, setActiveTab] = useState<'favorites' | 'reading'>(initialTab || 'favorites');
   const [favorites, setFavorites] = useState<BookListItem[]>([]);
   const [reading, setReading] = useState<ReadingBook[]>([]);
   const [loading, setLoading] = useState(true);
   const [isUpdatingAvatar, setIsUpdatingAvatar] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const isDedicatedPage = !!initialTab;
 
   useEffect(() => {
     loadData();
@@ -137,107 +139,124 @@ export function ProfilePage({ onBookClick, onStartReading, initialTab = 'favorit
 
   return (
     <div>
-      <div className="bg-card rounded-lg shadow-sm border border-amber-200 dark:border-stone-700 p-6 mb-6">
-        <div className="flex items-center gap-6">
-          <div className="relative group">
-            <div 
-              onClick={handleAvatarClick}
-              className={`w-24 h-24 rounded-full overflow-hidden flex items-center justify-center cursor-pointer transition-all ${
-                isUpdatingAvatar ? 'opacity-50' : 'hover:ring-4 hover:ring-amber-200 dark:hover:ring-stone-600'
-              } ${user?.avatarFile ? '' : 'bg-gradient-to-br from-amber-500 to-orange-600'}`}
-            >
-              {user?.avatarFile ? (
-                <img 
-                  src={user.avatarFile.startsWith('http') ? user.avatarFile : `${API_BASE}${user.avatarFile}`}
-                  alt={user.login}
-                  className="w-full h-full object-cover"
-                />
-              ) : (
-                <User className="w-12 h-12 text-white" />
+      {!isDedicatedPage && (
+        <div className="bg-card rounded-lg shadow-sm border border-amber-200 dark:border-stone-700 p-6 mb-6">
+          <div className="flex items-center gap-6">
+            <div className="relative group">
+              <div 
+                onClick={handleAvatarClick}
+                className={`w-24 h-24 rounded-full overflow-hidden flex items-center justify-center cursor-pointer transition-all ${
+                  isUpdatingAvatar ? 'opacity-50' : 'hover:ring-4 hover:ring-amber-200 dark:hover:ring-stone-600'
+                } ${user?.avatarFile ? '' : 'bg-gradient-to-br from-amber-500 to-orange-600'}`}
+              >
+                {user?.avatarFile ? (
+                  <img 
+                    src={user.avatarFile.startsWith('http') ? user.avatarFile : `${API_BASE}${user.avatarFile}`}
+                    alt={user.login}
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <User className="w-12 h-12 text-white" />
+                )}
+                
+                <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                  <Camera className="w-8 h-8 text-white" />
+                </div>
+
+                {isUpdatingAvatar && (
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <Loader className="w-8 h-8 text-amber-600 animate-spin" />
+                  </div>
+                )}
+              </div>
+              
+              {user?.avatarFile && !isUpdatingAvatar && (
+                <button
+                  onClick={handleDeleteAvatar}
+                  className="absolute -top-1 -right-1 p-1.5 bg-red-500 text-white rounded-full hover:bg-red-600 transition-colors shadow-sm"
+                  title="Удалить аватар"
+                >
+                  <Trash2 className="w-3 h-3" />
+                </button>
               )}
               
-              <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                <Camera className="w-8 h-8 text-white" />
-              </div>
-
-              {isUpdatingAvatar && (
-                <div className="absolute inset-0 flex items-center justify-center">
-                  <Loader className="w-8 h-8 text-amber-600 animate-spin" />
-                </div>
-              )}
+              <input
+                type="file"
+                ref={fileInputRef}
+                onChange={handleFileChange}
+                className="hidden"
+                accept="image/*"
+              />
             </div>
-            
-            {user?.avatarFile && !isUpdatingAvatar && (
+
+            <div>
+              <h1 className="text-2xl font-bold text-gray-900 dark:text-stone-100">{user?.login}</h1>
+              <p className="text-gray-600 dark:text-stone-400">{user?.email}</p>
+              <p className="text-sm text-gray-500 dark:text-stone-500 mt-1">
+                {user?.role === 'admin' ? 'Администратор' : 'Пользователь'}
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {isDedicatedPage && (
+        <div className="mb-8">
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-stone-100 whitespace-nowrap">
+            {activeTab === 'favorites' ? 'Избранное' : 'Читаю сейчас'}
+          </h1>
+          <p className="text-gray-500 dark:text-stone-400 mt-1">
+            {activeTab === 'favorites' 
+              ? 'Книги, которые вы сохранили в свою коллекцию' 
+              : 'Ваш прогресс чтения по всем книгам'}
+          </p>
+        </div>
+      )}
+
+      <div className={!isDedicatedPage ? "bg-card rounded-lg shadow-sm border border-amber-200 dark:border-stone-700" : ""}>
+        {!isDedicatedPage && (
+          <div className="border-b border-amber-200 dark:border-stone-700">
+            <div className="flex">
               <button
-                onClick={handleDeleteAvatar}
-                className="absolute -top-1 -right-1 p-1.5 bg-red-500 text-white rounded-full hover:bg-red-600 transition-colors shadow-sm"
-                title="Удалить аватар"
+                onClick={() => setActiveTab('favorites')}
+                className={`flex items-center gap-2 px-6 py-4 font-medium transition-colors ${
+                  activeTab === 'favorites'
+                    ? 'text-amber-600 dark:text-amber-500 border-b-2 border-amber-600 dark:border-amber-500'
+                    : 'text-gray-600 dark:text-stone-400 hover:text-gray-900 dark:hover:text-stone-200'
+                }`}
               >
-                <Trash2 className="w-3 h-3" />
+                <Heart className="w-5 h-5" />
+                Избранное
+                <span className="ml-1 px-2 py-0.5 bg-gray-100 dark:bg-stone-700 rounded-full text-sm">
+                  {favorites.length}
+                </span>
               </button>
-            )}
-            
-            <input
-              type="file"
-              ref={fileInputRef}
-              onChange={handleFileChange}
-              className="hidden"
-              accept="image/*"
-            />
+              <button
+                onClick={() => setActiveTab('reading')}
+                className={`flex items-center gap-2 px-6 py-4 font-medium transition-colors ${
+                  activeTab === 'reading'
+                    ? 'text-amber-600 dark:text-amber-500 border-b-2 border-amber-600 dark:border-amber-500'
+                    : 'text-gray-600 dark:text-stone-400 hover:text-gray-900 dark:hover:text-stone-200'
+                }`}
+              >
+                <BookOpen className="w-5 h-5" />
+                Читаю сейчас
+                <span className="ml-1 px-2 py-0.5 bg-gray-100 rounded-full text-sm">
+                  {reading.length}
+                </span>
+              </button>
+            </div>
           </div>
+        )}
 
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900 dark:text-stone-100">{user?.login}</h1>
-            <p className="text-gray-600 dark:text-stone-400">{user?.email}</p>
-            <p className="text-sm text-gray-500 dark:text-stone-500 mt-1">
-              {user?.role === 'admin' ? 'Администратор' : 'Пользователь'}
-            </p>
-          </div>
-        </div>
-      </div>
-
-      <div className="bg-card rounded-lg shadow-sm border border-amber-200 dark:border-stone-700">
-        <div className="border-b border-amber-200 dark:border-stone-700">
-          <div className="flex">
-            <button
-              onClick={() => setActiveTab('favorites')}
-              className={`flex items-center gap-2 px-6 py-4 font-medium transition-colors ${
-                activeTab === 'favorites'
-                  ? 'text-amber-600 dark:text-amber-500 border-b-2 border-amber-600 dark:border-amber-500'
-                  : 'text-gray-600 dark:text-stone-400 hover:text-gray-900 dark:hover:text-stone-200'
-              }`}
-            >
-              <Heart className="w-5 h-5" />
-              Избранное
-              <span className="ml-1 px-2 py-0.5 bg-gray-100 dark:bg-stone-700 rounded-full text-sm">
-                {favorites.length}
-              </span>
-            </button>
-            <button
-              onClick={() => setActiveTab('reading')}
-              className={`flex items-center gap-2 px-6 py-4 font-medium transition-colors ${
-                activeTab === 'reading'
-                  ? 'text-amber-600 dark:text-amber-500 border-b-2 border-amber-600 dark:border-amber-500'
-                  : 'text-gray-600 dark:text-stone-400 hover:text-gray-900 dark:hover:text-stone-200'
-              }`}
-            >
-              <BookOpen className="w-5 h-5" />
-              Читаю сейчас
-              <span className="ml-1 px-2 py-0.5 bg-gray-100 rounded-full text-sm">
-                {reading.length}
-              </span>
-            </button>
-          </div>
-        </div>
-
-        <div className="p-6">
+        <div className={!isDedicatedPage ? "p-6" : ""}>
           {loading ? (
             <div className="flex items-center justify-center py-20">
               <Loader className="w-8 h-8 text-amber-600 animate-spin" />
             </div>
           ) : activeTab === 'favorites' ? (
             favorites.length === 0 ? (
-              <div className="text-center py-20">
+              <div className={`text-center py-20 ${isDedicatedPage ? 'bg-card rounded-xl border border-dashed border-gray-300 dark:border-stone-700' : ''}`}>
                 <Heart className="w-16 h-16 text-gray-300 mx-auto mb-4" />
                 <p className="text-gray-600">У вас пока нет избранных книг</p>
                 <p className="text-sm text-gray-500 mt-2">
@@ -259,7 +278,7 @@ export function ProfilePage({ onBookClick, onStartReading, initialTab = 'favorit
               </div>
             )
           ) : reading.length === 0 ? (
-            <div className="text-center py-20">
+            <div className={`text-center py-20 ${isDedicatedPage ? 'bg-card rounded-xl border border-dashed border-gray-300 dark:border-stone-700' : ''}`}>
               <BookOpen className="w-16 h-16 text-gray-300 mx-auto mb-4" />
               <p className="text-gray-600">Вы пока ничего не читаете</p>
               <p className="text-sm text-gray-500 mt-2">

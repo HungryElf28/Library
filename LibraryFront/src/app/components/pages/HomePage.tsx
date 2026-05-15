@@ -15,8 +15,8 @@ export function HomePage({ onBookClick }: HomePageProps) {
   const [mostReadGenre, setMostReadGenre] = useState<BookListItem[]>([]);
   const [mostReadAuthor, setMostReadAuthor] = useState<BookListItem[]>([]);
   const [recommendations, setRecommendations] = useState<BookListItem[]>([]);
-  const [genres, setGenres] = useState<Genre[]>([]);
-  const [authors, setAuthors] = useState<Author[]>([]);
+  const [randomGenre, setRandomGenre] = useState<Genre | null>(null);
+  const [randomAuthor, setRandomAuthor] = useState<Author | null>(null);
   const [favorites, setFavorites] = useState<number[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -27,23 +27,37 @@ export function HomePage({ onBookClick }: HomePageProps) {
   const loadInitialData = async () => {
     setLoading(true);
     try {
+      // Fetch initial data
       const [global, genresRes, authorsRes] = await Promise.all([
         api.books.getMostRead({ count: 10 }),
-        api.genres.getAll({ pageSize: 5 }),
-        api.authors.getAll({ pageSize: 5 }),
+        api.genres.getAll({ pageSize: 50 }), // Get more genres to have a better random pool
+        api.authors.getAll({ pageSize: 50 }), // Get more authors
       ]);
 
       setMostReadGlobal(global);
-      setGenres(genresRes.items);
-      setAuthors(authorsRes.items);
 
       if (genresRes.items.length > 0) {
-        const genreMostRead = await api.books.getMostRead({ count: 10, genreId: genresRes.items[0].id });
+        const randomIndex = Math.floor(Math.random() * genresRes.items.length);
+        const selectedGenre = genresRes.items[randomIndex];
+        setRandomGenre(selectedGenre);
+        
+        const genreMostRead = await api.books.getMostRead({ 
+          count: 10, 
+          genreId: selectedGenre.id 
+        });
         setMostReadGenre(genreMostRead);
       }
 
+      // Select random author
       if (authorsRes.items.length > 0) {
-        const authorMostRead = await api.books.getMostRead({ count: 10, authorId: authorsRes.items[0].id });
+        const randomIndex = Math.floor(Math.random() * authorsRes.items.length);
+        const selectedAuthor = authorsRes.items[randomIndex];
+        setRandomAuthor(selectedAuthor);
+
+        const authorMostRead = await api.books.getMostRead({ 
+          count: 10, 
+          authorId: selectedAuthor.id 
+        });
         setMostReadAuthor(authorMostRead);
       }
 
@@ -120,9 +134,9 @@ export function HomePage({ onBookClick }: HomePageProps) {
       )}
 
       {/* Most Read by Genre */}
-      {genres.length > 0 && mostReadGenre.length > 0 && (
+      {randomGenre && mostReadGenre.length > 0 && (
         <BookSection
-          title={`Популярно в жанре: ${genres[0].name}`}
+          title={`Популярно в жанре: ${randomGenre.name}`}
           icon={<BookOpen className="w-6 h-6 text-amber-600" />}
           books={mostReadGenre}
           onBookClick={onBookClick}
@@ -133,9 +147,9 @@ export function HomePage({ onBookClick }: HomePageProps) {
       )}
 
       {/* Most Read by Author */}
-      {authors.length > 0 && mostReadAuthor.length > 0 && (
+      {randomAuthor && mostReadAuthor.length > 0 && (
         <BookSection
-          title={`Лучшее от автора: ${authors[0].name}`}
+          title={`Лучшее от автора: ${randomAuthor.name}`}
           icon={<User className="w-6 h-6 text-amber-600" />}
           books={mostReadAuthor}
           onBookClick={onBookClick}

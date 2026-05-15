@@ -91,10 +91,10 @@ export function Header({ onSearch, onNavigate, currentPage }: HeaderProps) {
               <span className="text-xl font-semibold text-gray-900 dark:text-stone-100">Библиотека</span>
             </button>
 
-            <nav className="hidden md:flex items-center gap-6">
+            <nav className="hidden md:flex items-center gap-4">
               <button
                 onClick={() => onNavigate('home')}
-                className={`text-sm transition-colors ${
+                className={`text-sm whitespace-nowrap transition-colors ${
                   currentPage === 'home' ? 'text-amber-600 dark:text-amber-500 font-medium' : 'text-gray-600 dark:text-stone-400 hover:text-gray-900 dark:hover:text-stone-200'
                 }`}
               >
@@ -102,7 +102,7 @@ export function Header({ onSearch, onNavigate, currentPage }: HeaderProps) {
               </button>
               <button
                 onClick={() => onNavigate('catalog')}
-                className={`text-sm transition-colors ${
+                className={`text-sm whitespace-nowrap transition-colors ${
                   currentPage === 'catalog' ? 'text-amber-600 dark:text-amber-500 font-medium' : 'text-gray-600 dark:text-stone-400 hover:text-gray-900 dark:hover:text-stone-200'
                 }`}
               >
@@ -112,7 +112,7 @@ export function Header({ onSearch, onNavigate, currentPage }: HeaderProps) {
                 <>
                   <button
                     onClick={() => onNavigate('reading')}
-                    className={`text-sm transition-colors ${
+                    className={`text-sm whitespace-nowrap transition-colors ${
                       currentPage === 'reading' ? 'text-amber-600 dark:text-amber-500 font-medium' : 'text-gray-600 dark:text-stone-400 hover:text-gray-900 dark:hover:text-stone-200'
                     }`}
                   >
@@ -120,7 +120,7 @@ export function Header({ onSearch, onNavigate, currentPage }: HeaderProps) {
                   </button>
                   <button
                     onClick={() => onNavigate('favorites')}
-                    className={`text-sm transition-colors ${
+                    className={`text-sm whitespace-nowrap transition-colors ${
                       currentPage === 'favorites' ? 'text-amber-600 dark:text-amber-500 font-medium' : 'text-gray-600 dark:text-stone-400 hover:text-gray-900 dark:hover:text-stone-200'
                     }`}
                   >
@@ -128,7 +128,7 @@ export function Header({ onSearch, onNavigate, currentPage }: HeaderProps) {
                   </button>
                   <button
                     onClick={() => onNavigate('collections')}
-                    className={`text-sm transition-colors ${
+                    className={`text-sm whitespace-nowrap transition-colors ${
                       currentPage === 'collections' ? 'text-amber-600 dark:text-amber-500 font-medium' : 'text-gray-600 dark:text-stone-400 hover:text-gray-900 dark:hover:text-stone-200'
                     }`}
                   >
@@ -136,7 +136,7 @@ export function Header({ onSearch, onNavigate, currentPage }: HeaderProps) {
                   </button>
                   <button
                     onClick={() => onNavigate('recommendations')}
-                    className={`text-sm flex items-center gap-1 transition-colors ${
+                    className={`text-sm whitespace-nowrap flex items-center gap-1 transition-colors ${
                       currentPage === 'recommendations' ? 'text-amber-600 dark:text-amber-500 font-medium' : 'text-gray-600 dark:text-stone-400 hover:text-gray-900 dark:hover:text-stone-200'
                     }`}
                   >
