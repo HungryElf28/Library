@@ -26,6 +26,8 @@ export function AdminPage() {
   const [page, setPage] = useState(1);
   const [totalCount, setTotalCount] = useState(0);
   const pageSize = 12;
+  const authorpageSize = 16;
+  const genreTagPageSize = 20;
 
   const [editingBook, setEditingBook] = useState<Book | null>(null);
   const [editingAuthor, setEditingAuthor] = useState<Author | null>(null);
@@ -41,42 +43,68 @@ export function AdminPage() {
     loadData(1);
   }, [activeTab, searchTerm]);
 
-  const loadData = async (pageNum: number) => {
-    setLoading(true);
-    try {
-      const params = { searchTerm, page: pageNum, pageSize };
-      
-      if (activeTab === 'books') {
-        const data = await api.books.getAll(params);
+const loadData = async (pageNum: number) => {
+  setLoading(true);
+  try {
+    const getPageSize = () => {
+      switch (activeTab) {
+        case 'authors': return authorpageSize;
+        case 'genres': return genreTagPageSize;
+        case 'tags': return genreTagPageSize;
+        default: return pageSize;
+      }
+    };
+
+    const queryParams = { 
+      searchTerm, 
+      page: pageNum, 
+      pageSize: getPageSize() 
+    };
+
+    switch (activeTab) {
+      case 'books': {
+        const data = await api.books.getAll(queryParams);
+
         const fullBooks = await Promise.all(
-            data.items.map(item => api.books.getById(item.id))
+          data.items.map(item => api.books.getById(item.id))
         );
         setBooks(fullBooks);
         setTotalCount(data.total);
-      } else if (activeTab === 'authors') {
-        const data = await api.authors.getAll(params);
+        break;
+      }
+      case 'authors': {
+        const data = await api.authors.getAll(queryParams);
         setAuthors(data.items);
         setTotalCount(data.total);
-      } else if (activeTab === 'genres') {
-        const data = await api.genres.getAll(params);
+        break;
+      }
+      case 'genres': {
+        const data = await api.genres.getAll(queryParams);
         setGenres(data.items);
         setTotalCount(data.total);
-      } else if (activeTab === 'tags') {
-        const data = await api.tags.getAll(params);
+        break;
+      }
+      case 'tags': {
+        const data = await api.tags.getAll(queryParams);
         setTags(data.items);
         setTotalCount(data.total);
-      } else if (activeTab === 'users') {
-        const data = await api.users.getAllUsers(params);
+        break;
+      }
+      case 'users': {
+        const data = await api.users.getAllUsers(queryParams);
         setUsers(data.items);
         setTotalCount(data.total);
+        break;
       }
-      setPage(pageNum);
-    } catch (error) {
-      console.error('Error loading data:', error);
-    } finally {
-      setLoading(false);
     }
-  };
+    
+    setPage(pageNum);
+  } catch (error) {
+    console.error('Error loading data:', error);
+  } finally {
+    setLoading(false);
+  }
+};
 
   const totalPages = Math.ceil(totalCount / pageSize);
 
