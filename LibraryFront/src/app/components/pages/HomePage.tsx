@@ -2,14 +2,15 @@ import React, { useState, useEffect } from 'react';
 import { BookListItem, Genre, Author } from '../../../types';
 import { api } from '../../../services/api';
 import { BookCard } from '../BookCard';
-import { Loader, TrendingUp, Award, User, BookOpen } from 'lucide-react';
+import { Loader, TrendingUp, Award, User, BookOpen, ChevronRight } from 'lucide-react';
 import { useAuth } from '../../../contexts/AuthContext';
 
 interface HomePageProps {
   onBookClick: (bookId: number) => void;
+  onNavigate: (page: string, params?: any) => void;
 }
 
-export function HomePage({ onBookClick }: HomePageProps) {
+export function HomePage({ onBookClick, onNavigate }: HomePageProps) {
   const { user } = useAuth();
   const [mostReadGlobal, setMostReadGlobal] = useState<BookListItem[]>([]);
   const [mostReadGenre, setMostReadGenre] = useState<BookListItem[]>([]);
@@ -141,6 +142,10 @@ export function HomePage({ onBookClick }: HomePageProps) {
           onFavoriteToggle={handleFavoriteToggle}
           favorites={favorites}
           userRole={user?.role}
+          onHeaderClick={() => {
+            console.log('Navigating to genre:', randomGenre.id);
+            onNavigate('genre-details', { genreId: randomGenre.id });
+          }}
         />
       )}
 
@@ -154,6 +159,10 @@ export function HomePage({ onBookClick }: HomePageProps) {
           onFavoriteToggle={handleFavoriteToggle}
           favorites={favorites}
           userRole={user?.role}
+          onHeaderClick={() => {
+            console.log('Navigating to author:', randomAuthor.id);
+            onNavigate('author-details', { authorId: randomAuthor.id });
+          }}
         />
       )}
     </div>
@@ -168,16 +177,30 @@ interface BookSectionProps {
   onFavoriteToggle: (id: number) => void;
   favorites: number[];
   userRole?: string;
+  onHeaderClick?: () => void;
 }
 
-function BookSection({ title, icon, books, onBookClick, onFavoriteToggle, favorites, userRole }: BookSectionProps) {
+function BookSection({ title, icon, books, onBookClick, onFavoriteToggle, favorites, userRole, onHeaderClick }: BookSectionProps) {
   if (books.length === 0) return null;
 
   return (
     <section>
-      <div className="flex items-center gap-2 mb-6">
-        {icon}
-        <h2 className="text-2xl font-bold text-gray-900 dark:text-stone-100">{title}</h2>
+      <div 
+        className={`flex items-center justify-between mb-6 ${onHeaderClick ? 'cursor-pointer group' : ''}`}
+        onClick={onHeaderClick}
+      >
+        <div className="flex items-center gap-2">
+          {icon}
+          <h2 className="text-2xl font-bold text-gray-900 dark:text-stone-100 group-hover:text-amber-600 dark:group-hover:text-amber-500 transition-colors">
+            {title}
+          </h2>
+        </div>
+        {onHeaderClick && (
+          <div className="flex items-center gap-1 text-amber-600 dark:text-amber-500 font-medium text-sm opacity-0 group-hover:opacity-100 transition-opacity">
+            <span>Смотреть все</span>
+            <ChevronRight className="w-4 h-4" />
+          </div>
+        )}
       </div>
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
         {books.map(book => (

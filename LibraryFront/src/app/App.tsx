@@ -151,6 +151,7 @@ function AppContent() {
         {currentPage.type === 'home' && (
           <HomePage
             onBookClick={(bookId) => navigate('book-details', { bookId })}
+            onNavigate={(page, params) => navigate(page, params)}
           />
         )}
         {currentPage.type === 'search' && (
