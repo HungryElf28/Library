@@ -27,11 +27,10 @@ export function HomePage({ onBookClick }: HomePageProps) {
   const loadInitialData = async () => {
     setLoading(true);
     try {
-      // Fetch initial data
       const [global, genresRes, authorsRes] = await Promise.all([
         api.books.getMostRead({ count: 10 }),
-        api.genres.getAll({ pageSize: 50 }), // Get more genres to have a better random pool
-        api.authors.getAll({ pageSize: 50 }), // Get more authors
+        api.genres.getAll({ pageSize: 500 }),
+        api.authors.getAll({ pageSize: 500 }),
       ]);
 
       setMostReadGlobal(global);
@@ -42,20 +41,19 @@ export function HomePage({ onBookClick }: HomePageProps) {
         setRandomGenre(selectedGenre);
         
         const genreMostRead = await api.books.getMostRead({ 
-          count: 10, 
+          count: 5, 
           genreId: selectedGenre.id 
         });
         setMostReadGenre(genreMostRead);
       }
 
-      // Select random author
       if (authorsRes.items.length > 0) {
         const randomIndex = Math.floor(Math.random() * authorsRes.items.length);
         const selectedAuthor = authorsRes.items[randomIndex];
         setRandomAuthor(selectedAuthor);
 
         const authorMostRead = await api.books.getMostRead({ 
-          count: 10, 
+          count: 5, 
           authorId: selectedAuthor.id 
         });
         setMostReadAuthor(authorMostRead);
