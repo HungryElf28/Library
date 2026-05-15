@@ -141,6 +141,8 @@ public class BookRepository : IBookRepository
             .Split(' ', StringSplitOptions.RemoveEmptyEntries);
 
         if (terms.Length == 0) return new List<SearchProjection>();
+        
+        var patterns = terms.Select(t => $"%{t}%").ToList();
 
         var booksQuery = _context.Books
             .Include(b => b.Authors)
@@ -148,18 +150,18 @@ public class BookRepository : IBookRepository
             .Include(b => b.Reviews)
             .AsQueryable();
 
-        // Perform search
+
         var results = await booksQuery
             .Select(b => new
             {
                 Book = b,
-                TitleSimilarity = EF.Functions.TrigramsSimilarity(b.Title, query),
+                TitleSimilarity = (double)EF.Functions.TrigramsSimilarity(b.Title, query),
                 AuthorSimilarity = b.Authors.Any()
-                    ? b.Authors.Max(a => (double?)EF.Functions.TrigramsSimilarity(a.Name, query)) ?? 0
+                    ? (double?)b.Authors.Max(a => EF.Functions.TrigramsSimilarity(a.Name, query)) ?? 0
                     : 0,
-                MatchesTerms = terms.All(t => 
-                    EF.Functions.ILike(b.Title, $"%{t}%") || 
-                    b.Authors.Any(a => EF.Functions.ILike(a.Name, $"%{t}%"))
+                MatchesTerms = patterns.All(p => 
+                    EF.Functions.ILike(b.Title, p) || 
+                    b.Authors.Any(a => EF.Functions.ILike(a.Name, p))
                 )
             })
             .Where(x =>
