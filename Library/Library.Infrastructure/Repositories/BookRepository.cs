@@ -243,6 +243,10 @@ public class BookRepository : IBookRepository
                 ? query.OrderByDescending(b => b.Rating)
                 : query.OrderBy(b => b.Rating),
 
+            BookSortBy.ReadCount => sortOrder == BookSortOrder.Desc
+                ? query.OrderByDescending(b => b.ReadCount)
+                : query.OrderBy(b => b.ReadCount),
+
             _ => query.OrderBy(b => b.Id)
         };
 

@@ -18,6 +18,8 @@ export function AuthorDetailsPage({ authorId, onBookClick, onBack }: AuthorDetai
   const [books, setBooks] = useState<BookListItem[]>([]);
   const [favorites, setFavorites] = useState<number[]>([]);
   const [loading, setLoading] = useState(true);
+  const [sortBy, setSortBy] = useState<'Title' | 'Rate' | 'ReadCount'>('Title');
+  const [sortOrder, setSortOrder] = useState<'Asc' | 'Desc'>('Asc');
   const [pagination, setPagination] = useState({
     total: 0,
     page: 1,
@@ -33,7 +35,7 @@ export function AuthorDetailsPage({ authorId, onBookClick, onBack }: AuthorDetai
 
   useEffect(() => {
     loadBooks();
-  }, [authorId, pagination.page]);
+  }, [authorId, pagination.page, sortBy, sortOrder]);
 
   const loadAuthor = async () => {
     try {
@@ -51,6 +53,8 @@ export function AuthorDetailsPage({ authorId, onBookClick, onBack }: AuthorDetai
         authorId,
         page: pagination.page,
         pageSize: pagination.pageSize,
+        sortBy,
+        sortOrder
       });
       setBooks(response.items);
       setPagination(prev => ({ ...prev, total: response.total }));
@@ -152,11 +156,35 @@ export function AuthorDetailsPage({ authorId, onBookClick, onBack }: AuthorDetai
         </div>
       </div>
 
-      <div>
-        <h2 className="text-2xl font-bold text-gray-900 dark:text-stone-100 mb-6 flex items-center gap-2">
-          <BookIcon className="w-6 h-6 text-amber-600" />
-          Книги автора ({pagination.total})
-        </h2>
+      <div className="space-y-6">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6">
+          <h2 className="text-2xl font-bold text-gray-900 dark:text-stone-100 flex items-center gap-2">
+            <BookIcon className="w-6 h-6 text-amber-600" />
+            Книги автора ({pagination.total})
+          </h2>
+
+          <div className="flex items-center gap-2">
+            <select
+              value={sortBy}
+              onChange={(e) => setSortBy(e.target.value as any)}
+              className="bg-card border border-amber-200 dark:border-stone-700 rounded-lg px-3 py-1.5 text-sm outline-none focus:ring-2 focus:ring-amber-500"
+            >
+              <option value="Title">По алфавиту</option>
+              <option value="Rate">По рейтингу</option>
+              <option value="ReadCount">По числу прочтений</option>
+            </select>
+            <button
+              onClick={() => setSortOrder(sortOrder === 'Asc' ? 'Desc' : 'Asc')}
+              className="p-1.5 border border-amber-200 dark:border-stone-700 rounded-lg hover:bg-amber-50 dark:hover:bg-stone-800 transition-colors"
+            >
+              {sortOrder === 'Asc' ? (
+                <ChevronLeft className="w-5 h-5 rotate-90" />
+              ) : (
+                <ChevronLeft className="w-5 h-5 -rotate-90" />
+              )}
+            </button>
+          </div>
+        </div>
 
         {loading ? (
           <div className="flex items-center justify-center py-20">

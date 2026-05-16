@@ -5,10 +5,10 @@ import { X } from 'lucide-react';
 interface FilterSidebarProps {
   genres: Genre[];
   selectedGenre?: number;
-  sortBy: 'Title' | 'Rate';
+  sortBy: 'Title' | 'Rate' | 'ReadCount';
   sortOrder: 'Asc' | 'Desc';
   onGenreChange: (genreId?: number) => void;
-  onSortChange: (sortBy: 'Title' | 'Rate', sortOrder: 'Asc' | 'Desc') => void;
+  onSortChange: (sortBy: 'Title' | 'Rate' | 'ReadCount', sortOrder: 'Asc' | 'Desc') => void;
   onClose?: () => void;
   isMobile?: boolean;
 }
@@ -69,7 +69,7 @@ export function FilterSidebar({
                 sortBy === 'Title' ? 'bg-amber-50 dark:bg-amber-900/30 text-amber-900 dark:text-amber-200' : 'text-gray-700 dark:text-stone-300 hover:bg-amber-50/50 dark:hover:bg-stone-700'
               }`}
             >
-              По названию
+              По алфавиту
             </button>
             <button
               onClick={() => onSortChange('Rate', sortOrder)}
@@ -78,6 +78,14 @@ export function FilterSidebar({
               }`}
             >
               По рейтингу
+            </button>
+            <button
+              onClick={() => onSortChange('ReadCount', sortOrder)}
+              className={`block w-full text-left px-3 py-2 rounded-lg text-sm transition-colors ${
+                sortBy === 'ReadCount' ? 'bg-amber-50 dark:bg-amber-900/30 text-amber-900 dark:text-amber-200' : 'text-gray-700 dark:text-stone-300 hover:bg-amber-50/50 dark:hover:bg-stone-700'
+              }`}
+            >
+              По числу прочтений
             </button>
           </div>
 

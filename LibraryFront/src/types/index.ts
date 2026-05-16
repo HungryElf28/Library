@@ -144,7 +144,7 @@ export interface BookQueryParams {
   tagId?: number;
   page?: number;
   pageSize?: number;
-  sortBy?: 'Title' | 'Rate';
+  sortBy?: 'Title' | 'Rate' | 'ReadCount';
   sortOrder?: 'Asc' | 'Desc';
   query?: string;
 }

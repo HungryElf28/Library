@@ -50,7 +50,8 @@ namespace Library.Domain.Entities
     public enum BookSortBy
     {
         Title,
-        Rate
+        Rate,
+        ReadCount
     }
 
     public enum BookSortOrder
