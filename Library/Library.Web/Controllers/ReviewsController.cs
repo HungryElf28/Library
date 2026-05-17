@@ -39,6 +39,16 @@ namespace Library.Web.Controllers
             var pageSize = query.NormalizedPageSize;
             var reviews = await _service.GetByBook(bookId);
 
+            int? currentUserId = null;
+            if (User.Identity?.IsAuthenticated == true)
+            {
+                try
+                {
+                    currentUserId = User.GetUserId();
+                }
+                catch { }
+            }
+
             if (!string.IsNullOrWhiteSpace(query.SearchTerm))
             {
                 reviews = reviews
@@ -48,7 +58,8 @@ namespace Library.Web.Controllers
 
             var total = reviews.Count;
             var items = reviews
-                .OrderByDescending(r => r.Id)
+                .OrderByDescending(r => currentUserId.HasValue && r.UserId == currentUserId.Value)
+                .ThenByDescending(r => r.Id)
                 .Skip((page - 1) * pageSize)
                 .Take(pageSize)
                 .Select(r => new

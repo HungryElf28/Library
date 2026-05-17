@@ -37,12 +37,20 @@ export function BookDetailsPage({
   const [showCollectionsModal, setShowCollectionsModal] = useState(false);
   const [collections, setCollections] = useState<Collection[]>([]);
   const [ratingFilter, setRatingFilter] = useState<number | null>(null);
+  const [expandedReviews, setExpandedReviews] = useState<Record<number, boolean>>({});
 
   useEffect(() => {
     loadBook();
     loadReviews();
     checkFavorite();
   }, [bookId]);
+
+  const toggleReviewExpand = (reviewId: number) => {
+    setExpandedReviews(prev => ({
+      ...prev,
+      [reviewId]: !prev[reviewId]
+    }));
+  };
 
   const loadBook = async () => {
     setLoading(true);
@@ -241,10 +249,10 @@ export function BookDetailsPage({
         )}
       </div>
 
-      <div className="bg-card rounded-lg shadow-sm border border-amber-200 dark:border-stone-700 overflow-hidden">
+      <div className="bg-card rounded-lg shadow-sm border border-amber-200 dark:border-stone-700">
         <div className="grid md:grid-cols-3 gap-8 p-6 md:p-8 items-start">
           <div className="md:col-span-1">
-            <div className="sticky top-20">
+            <div className="sticky top-24">
               {coverUrl ? (
                 <img
                   src={coverUrl}
@@ -550,7 +558,19 @@ export function BookDetailsPage({
                             </div>
                           </div>
                           {review.text && (
-                            <p className="text-gray-700 dark:text-stone-300 leading-relaxed whitespace-pre-wrap">{review.text}</p>
+                            <div className="relative">
+                              <p className={`text-gray-700 dark:text-stone-300 leading-relaxed whitespace-pre-wrap ${!expandedReviews[review.id] ? 'line-clamp-4' : ''}`}>
+                                {review.text}
+                              </p>
+                              {review.text.length > 200 && (
+                                <button
+                                  onClick={() => toggleReviewExpand(review.id)}
+                                  className="mt-2 text-sm font-bold text-amber-600 hover:text-amber-700 transition-colors"
+                                >
+                                  {expandedReviews[review.id] ? 'Свернуть' : 'Читать полностью'}
+                                </button>
+                              )}
+                            </div>
                           )}
                         </div>
                     );
