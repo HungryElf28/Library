@@ -18,6 +18,7 @@ export function BookEditModal({ book, onClose, onSave }: BookEditModalProps) {
     authorIds: book?.authors.map(a => a.id) || [],
     genreIds: book?.genres.map(g => g.id) || [],
     tagIds: book?.tags.map(t => t.id) || [],
+    ageRestriction: book?.ageRestriction || 0,
     textFile: undefined,
     coverFile: undefined,
   });
@@ -64,6 +65,7 @@ export function BookEditModal({ book, onClose, onSave }: BookEditModalProps) {
       const data = new FormData();
       data.append('Title', formData.title);
       data.append('Description', formData.description || '');
+      data.append('AgeRestriction', (formData.ageRestriction || 0).toString());
       
       formData.authorIds.forEach(id => data.append('AuthorIds', id.toString()));
       formData.genreIds.forEach(id => data.append('GenreIds', id.toString()));
@@ -149,6 +151,21 @@ export function BookEditModal({ book, onClose, onSave }: BookEditModalProps) {
                   required
                   className="w-full px-4 py-3 border border-amber-300 dark:border-stone-600 bg-card text-gray-900 dark:text-stone-100 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-500 transition-shadow"
                   placeholder="Например: Война и мир"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-bold text-gray-700 dark:text-stone-300 mb-2 uppercase tracking-wider">
+                  Возрастное ограничение
+                </label>
+                <input
+                  type="number"
+                  min="0"
+                  max="100"
+                  value={formData.ageRestriction}
+                  onChange={(e) => setFormData({ ...formData, ageRestriction: parseInt(e.target.value) || 0 })}
+                  className="w-full px-4 py-3 border border-amber-300 dark:border-stone-600 bg-card text-gray-900 dark:text-stone-100 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-500 transition-shadow"
+                  placeholder="Например: 16"
                 />
               </div>
 

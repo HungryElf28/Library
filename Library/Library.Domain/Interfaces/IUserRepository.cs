@@ -23,5 +23,6 @@ namespace Library.Domain.Interfaces
         Task DeleteAsync(int userId);
         Task ChangeRoleAsync(int userId, string roleName);
         Task<List<User>> GetAllAsync();
+        Task UpdateAccountAsync(int userId, string login, string email, string? passwordHash, DateTime? birthDate);
     }
 }

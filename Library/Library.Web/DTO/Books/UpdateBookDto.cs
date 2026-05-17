@@ -6,6 +6,7 @@
         public IFormFile? TextFile { get; set; }
         public IFormFile? CoverFile { get; set; }
         public string? Description { get; set; }
+        public int AgeRestriction { get; set; }
 
         public List<int> AuthorIds { get; set; } = new();
         public List<int> GenreIds { get; set; } = new();

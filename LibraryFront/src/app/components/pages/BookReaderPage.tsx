@@ -21,6 +21,7 @@ import {
 import { useAuth } from '../../../contexts/AuthContext';
 import { useReader } from '../../../contexts/ReaderContext';
 import { useTheme } from '../../../contexts/ThemeContext';
+import { calculateAge } from '../../utils';
 
 interface BookReaderPageProps {
   bookId: number;
@@ -384,6 +385,16 @@ export function BookReaderPage({ bookId, onBack }: BookReaderPageProps) {
     setLoading(true);
     try {
       const data = await api.books.getById(bookId);
+
+      if (data.ageRestriction && data.ageRestriction > 0 && user) {
+        const userAge = calculateAge(user.birthDate);
+        if (userAge < data.ageRestriction) {
+          setReaderError(`Эта книга имеет возрастное ограничение ${data.ageRestriction}+. Ваш возраст: ${userAge}.`);
+          setLoading(false);
+          return;
+        }
+      }
+
       setBook(data);
 
       let savedPage = 1;

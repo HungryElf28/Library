@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { Book, Review, CreateReviewDto, Collection } from '../../../types';
 import { api } from '../../../services/api';
-import { Star, Heart, BookOpen, Loader, ArrowLeft, Edit, ListPlus, X, Trash2, User } from 'lucide-react';
+import { Star, Heart, BookOpen, Loader, ArrowLeft, Edit, ListPlus, X, Trash2, User, Filter } from 'lucide-react';
 import { useAuth } from '../../../contexts/AuthContext';
 import { BookEditModal } from '../BookEditModal';
 import { API_BASE } from '../../../config';
+import { calculateAge } from '../../utils';
 
 interface BookDetailsPageProps {
   bookId: number;
@@ -35,6 +36,7 @@ export function BookDetailsPage({
   const [showEditModal, setShowEditModal] = useState(false);
   const [showCollectionsModal, setShowCollectionsModal] = useState(false);
   const [collections, setCollections] = useState<Collection[]>([]);
+  const [ratingFilter, setRatingFilter] = useState<number | null>(null);
 
   useEffect(() => {
     loadBook();
@@ -177,6 +179,14 @@ export function BookDetailsPage({
       return;
     }
 
+    if (book.ageRestriction && book.ageRestriction > 0) {
+      const userAge = calculateAge(user.birthDate);
+      if (userAge < book.ageRestriction) {
+        alert(`Эта книга имеет возрастное ограничение ${book.ageRestriction}+. Ваш возраст: ${userAge}.`);
+        return;
+      }
+    }
+
     onStartReading(bookId);
   };
 
@@ -205,8 +215,12 @@ export function BookDetailsPage({
     );
   }
 
+  const filteredReviews = ratingFilter 
+    ? reviews.filter(r => r.rate === ratingFilter)
+    : reviews;
+
   return (
-    <div>
+    <div className="max-w-6xl mx-auto">
       <div className="flex items-center justify-between mb-6">
         <button
           onClick={onBack}
@@ -283,7 +297,14 @@ export function BookDetailsPage({
 
           <div className="md:col-span-2 space-y-6">
             <div>
-              <h1 className="text-3xl font-bold text-gray-900 dark:text-stone-100 mb-2">{book.title}</h1>
+              <div className="flex items-center gap-3 mb-2">
+                <h1 className="text-3xl font-bold text-gray-900 dark:text-stone-100">{book.title}</h1>
+                {book.ageRestriction !== undefined && book.ageRestriction > 0 && (
+                  <span className="px-2 py-0.5 bg-black/60 backdrop-blur-sm rounded text-xs font-bold text-white border border-white/20 whitespace-nowrap">
+                    {book.ageRestriction}+
+                  </span>
+                )}
+              </div>
               <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-lg text-gray-600 dark:text-stone-400 mb-4">
                 {book.authors.map((a, i) => (
                     <React.Fragment key={a.id}>
@@ -338,13 +359,44 @@ export function BookDetailsPage({
             {book.description && (
               <div>
                 <h2 className="text-xl font-semibold text-gray-900 dark:text-stone-100 mb-3">Описание</h2>
-                <p className="text-gray-700 dark:text-stone-300 leading-relaxed">{book.description}</p>
+                <p className="text-gray-700 dark:text-stone-300 leading-relaxed whitespace-pre-wrap">{book.description}</p>
               </div>
             )}
 
-            <div className="pt-6 border-t border-amber-200 dark:border-stone-700">
-              <div className="flex items-center justify-between mb-4">
-                <h2 className="text-xl font-semibold text-gray-900 dark:text-stone-100">Отзывы</h2>
+            <div className="pt-8 border-t border-amber-200 dark:border-stone-700">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+                <div>
+                  <h2 className="text-xl font-bold text-gray-900 dark:text-stone-100">Отзывы читателей</h2>
+                  <div className="flex items-center gap-2 mt-2">
+                    <Filter className="w-4 h-4 text-amber-600" />
+                    <div className="flex flex-wrap gap-2">
+                      <button
+                        onClick={() => setRatingFilter(null)}
+                        className={`px-3 py-1 rounded-full text-xs font-bold transition-all ${
+                          ratingFilter === null
+                            ? 'bg-amber-600 text-white'
+                            : 'bg-stone-100 dark:bg-stone-800 text-gray-600 dark:text-stone-400 hover:bg-stone-200 dark:hover:bg-stone-700'
+                        }`}
+                      >
+                        Все
+                      </button>
+                      {[5, 4, 3, 2, 1].map(r => (
+                        <button
+                          key={r}
+                          onClick={() => setRatingFilter(ratingFilter === r ? null : r)}
+                          className={`px-3 py-1 rounded-full text-xs font-bold flex items-center gap-1 transition-all ${
+                            ratingFilter === r
+                              ? 'bg-amber-600 text-white'
+                              : 'bg-stone-100 dark:bg-stone-800 text-gray-600 dark:text-stone-400 hover:bg-stone-200 dark:hover:bg-stone-700'
+                          }`}
+                        >
+                          {r} <Star className={`w-3 h-3 ${ratingFilter === r ? 'fill-white' : 'fill-yellow-400 text-yellow-400'}`} />
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+                
                 {user && user.role !== 'guest' && (
                   <button
                     onClick={() => {
@@ -357,21 +409,21 @@ export function BookDetailsPage({
                             setShowReviewForm(true);
                         }
                     }}
-                    className="px-4 py-2 bg-amber-600 text-white rounded-lg text-sm font-medium hover:bg-amber-700 transition-all active:scale-95"
+                    className="px-6 py-2.5 bg-amber-600 text-white rounded-xl text-sm font-bold hover:bg-amber-700 transition-all active:scale-95 shadow-md shadow-amber-600/20"
                   >
-                    {showReviewForm ? 'Отменить' : existingUserReview ? 'Редактировать отзыв' : 'Написать отзыв'}
+                    {showReviewForm ? 'Отменить' : existingUserReview ? 'Редактировать мой отзыв' : 'Написать свой отзыв'}
                   </button>
                 )}
               </div>
 
               {showReviewForm && (
-                <form id="review-form" onSubmit={handleSubmitReview} className="mb-6 p-6 bg-amber-50/50 dark:bg-stone-800/50 rounded-2xl border border-amber-200 dark:border-stone-700 shadow-sm transition-all animate-in fade-in slide-in-from-top-4">
+                <form id="review-form" onSubmit={handleSubmitReview} className="mb-8 p-6 bg-amber-50/50 dark:bg-stone-800/50 rounded-2xl border border-amber-200 dark:border-stone-700 shadow-sm transition-all animate-in fade-in slide-in-from-top-4">
                   <h3 className="text-lg font-bold text-gray-900 dark:text-stone-100 mb-4">
                       {existingUserReview ? 'Редактирование отзыва' : 'Ваш отзыв'}
                   </h3>
-                  <div className="mb-4">
-                    <label className="block text-sm font-medium text-gray-700 dark:text-stone-300 mb-2">
-                      Оценка
+                  <div className="mb-6">
+                    <label className="block text-sm font-bold text-gray-700 dark:text-stone-300 mb-2 uppercase tracking-wider">
+                      Ваша оценка
                     </label>
                     <div className="flex gap-2">
                       {[1, 2, 3, 4, 5].map((rating) => (
@@ -379,13 +431,13 @@ export function BookDetailsPage({
                           key={rating}
                           type="button"
                           onClick={() => setUserReview({ ...userReview, rate: rating })}
-                          className="p-1"
+                          className="p-1 transition-transform hover:scale-110 active:scale-90"
                         >
                           <Star
-                            className={`w-8 h-8 ${
+                            className={`w-10 h-10 ${
                               rating <= userReview.rate
                                 ? 'fill-yellow-400 text-yellow-400'
-                                : 'text-gray-300'
+                                : 'text-gray-300 dark:text-stone-700'
                             }`}
                           />
                         </button>
@@ -393,43 +445,55 @@ export function BookDetailsPage({
                     </div>
                   </div>
 
-                  <div className="mb-4">
-                    <label className="block text-sm font-medium text-gray-700 dark:text-stone-300 mb-2">
-                      Текст отзыва (необязательно)
+                  <div className="mb-6">
+                    <label className="block text-sm font-bold text-gray-700 dark:text-stone-300 mb-2 uppercase tracking-wider">
+                      Комментарий
                     </label>
                     <textarea
                       value={userReview.text}
                       onChange={(e) => setUserReview({ ...userReview, text: e.target.value })}
                       rows={4}
-                      className="w-full px-3 py-2 border border-amber-300 dark:border-stone-600 bg-card rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500"
-                      placeholder="Поделитесь своим мнением о книге..."
+                      className="w-full px-4 py-3 border border-amber-300 dark:border-stone-600 bg-card rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-500 transition-shadow"
+                      placeholder="Что вам понравилось или не понравилось в этой книге?"
                     />
                   </div>
 
                   <button
                     type="submit"
-                    className="px-4 py-2 bg-amber-600 text-white rounded-lg font-medium hover:bg-amber-700"
+                    className="px-8 py-3 bg-amber-600 text-white rounded-xl font-bold hover:bg-amber-700 transition-all shadow-lg shadow-amber-600/20 active:scale-95"
                   >
-                    {existingUserReview ? 'Сохранить изменения' : 'Опубликовать'}
+                    {existingUserReview ? 'Сохранить изменения' : 'Опубликовать отзыв'}
                   </button>
                 </form>
               )}
 
               <div className="space-y-4">
-                {reviews.length === 0 ? (
-                  <p className="text-gray-600 dark:text-stone-400 text-center py-8">Пока нет отзывов</p>
+                {filteredReviews.length === 0 ? (
+                  <div className="text-center py-12 bg-gray-50 dark:bg-stone-900/40 rounded-2xl border border-dashed border-gray-200 dark:border-stone-800">
+                    <p className="text-gray-600 dark:text-stone-400">
+                        {ratingFilter ? `Отзывов с оценкой ${ratingFilter} пока нет` : 'Пока нет отзывов. Будьте первым!'}
+                    </p>
+                    {ratingFilter && (
+                        <button 
+                            onClick={() => setRatingFilter(null)}
+                            className="mt-2 text-sm text-amber-600 hover:underline font-bold"
+                        >
+                            Сбросить фильтр
+                        </button>
+                    )}
+                  </div>
                 ) : (
-                  reviews.map((review) => {
+                  filteredReviews.map((review) => {
                     const isOwnReview = review.userId === user?.id;
                     return (
-                        <div key={review.id} className={`p-5 rounded-2xl border transition-all ${
+                        <div key={review.id} className={`p-6 rounded-2xl border transition-all ${
                             isOwnReview 
                                 ? 'bg-amber-50/80 dark:bg-amber-900/10 border-amber-200 dark:border-amber-800 shadow-sm' 
                                 : 'bg-gray-50 dark:bg-stone-900/40 border-transparent hover:border-amber-100 dark:hover:border-stone-800'
                         }`}>
-                          <div className="flex items-start justify-between mb-3">
+                          <div className="flex items-start justify-between mb-4">
                             <div className="flex items-center gap-3">
-                              <div className="w-10 h-10 rounded-full bg-amber-100 dark:bg-stone-800 flex items-center justify-center overflow-hidden border border-amber-200 dark:border-stone-700 shadow-sm">
+                              <div className="w-12 h-12 rounded-full bg-amber-100 dark:bg-stone-800 flex items-center justify-center overflow-hidden border border-amber-200 dark:border-stone-700 shadow-sm">
                                 {review.userAvatar ? (
                                   <img 
                                     src={review.userAvatar.startsWith('http') ? review.userAvatar : `${API_BASE}${review.userAvatar}`}
@@ -437,7 +501,7 @@ export function BookDetailsPage({
                                     alt=""
                                   />
                                 ) : (
-                                  <User className="w-5 h-5 text-gray-500 dark:text-stone-500" />
+                                  <User className="w-6 h-6 text-gray-500 dark:text-stone-500" />
                                 )}
                               </div>
                               <div>
@@ -447,11 +511,11 @@ export function BookDetailsPage({
                                       <span className="text-[10px] px-2 py-0.5 bg-amber-200 dark:bg-amber-800 text-amber-800 dark:text-amber-200 rounded-full font-bold uppercase tracking-wider">Вы</span>
                                   )}
                                 </div>
-                                <div className="flex items-center gap-1 mt-0.5">
+                                <div className="flex items-center gap-1 mt-1">
                                   {Array.from({ length: 5 }, (_, i) => (
                                     <Star
                                       key={i}
-                                      className={`w-3 h-3 ${
+                                      className={`w-3.5 h-3.5 ${
                                         i < review.rate
                                           ? 'fill-yellow-400 text-yellow-400'
                                           : 'text-gray-300 dark:text-stone-700'
@@ -468,7 +532,7 @@ export function BookDetailsPage({
                                         {isOwnReview && !showReviewForm && (
                                             <button 
                                                 onClick={handleEditReview}
-                                                className="p-1.5 text-amber-600 hover:bg-amber-100 dark:hover:bg-amber-900/30 rounded-lg transition-colors"
+                                                className="p-2 text-amber-600 hover:bg-amber-100 dark:hover:bg-amber-900/30 rounded-xl transition-colors"
                                                 title="Редактировать"
                                             >
                                                 <Edit className="w-4 h-4" />
@@ -476,7 +540,7 @@ export function BookDetailsPage({
                                         )}
                                         <button 
                                             onClick={() => handleReviewDelete(review.id)}
-                                            className="p-1.5 text-red-600 hover:bg-red-100 dark:hover:bg-red-900/30 rounded-lg transition-colors"
+                                            className="p-2 text-red-600 hover:bg-red-100 dark:hover:bg-red-900/30 rounded-xl transition-colors"
                                             title="Удалить"
                                         >
                                             <Trash2 className="w-4 h-4" />
@@ -486,7 +550,7 @@ export function BookDetailsPage({
                             </div>
                           </div>
                           {review.text && (
-                            <p className="text-gray-700 dark:text-stone-300 leading-relaxed text-sm">{review.text}</p>
+                            <p className="text-gray-700 dark:text-stone-300 leading-relaxed whitespace-pre-wrap">{review.text}</p>
                           )}
                         </div>
                     );
@@ -510,35 +574,43 @@ export function BookDetailsPage({
       )}
 
       {showCollectionsModal && (
-        <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4">
-          <div className="bg-card rounded-lg shadow-xl max-w-md w-full max-h-[80vh] overflow-y-auto">
+        <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4 backdrop-blur-sm">
+          <div className="bg-card rounded-2xl shadow-xl max-w-md w-full max-h-[80vh] overflow-hidden flex flex-col border border-amber-200 dark:border-stone-700">
             <div className="sticky top-0 bg-card border-b border-amber-200 dark:border-stone-700 px-6 py-4 flex items-center justify-between">
-              <h2 className="text-xl font-semibold text-gray-900 dark:text-stone-100">
+              <h2 className="text-xl font-bold text-gray-900 dark:text-stone-100">
                 Добавить в подборку
               </h2>
               <button
                 onClick={() => setShowCollectionsModal(false)}
-                className="p-1 hover:bg-gray-100 dark:hover:bg-stone-700 rounded transition-colors"
+                className="p-2 hover:bg-gray-100 dark:hover:bg-stone-700 rounded-lg transition-colors text-gray-500"
               >
                 <X className="w-5 h-5" />
               </button>
             </div>
 
-            <div className="p-6">
+            <div className="p-6 overflow-y-auto">
               {collections.length === 0 ? (
-                <p className="text-center text-gray-600 dark:text-stone-400 py-8">
-                  У вас пока нет подборок. Создайте их на странице "Подборки".
-                </p>
+                <div className="text-center py-8">
+                  <p className="text-gray-600 dark:text-stone-400 mb-4">
+                    У вас пока нет подборок. Создайте их на странице "Подборки".
+                  </p>
+                  <button 
+                    onClick={() => onBack()} // Should navigate to collections but we don't have direct path here easily
+                    className="text-amber-600 font-bold hover:underline"
+                  >
+                      Перейти в коллекции
+                  </button>
+                </div>
               ) : (
-                <div className="space-y-2">
+                <div className="space-y-3">
                   {collections.map((collection) => (
                     <button
                       key={collection.id}
                       onClick={() => handleAddToCollection(collection.id)}
-                      className="w-full p-3 text-left border border-amber-200 dark:border-stone-700 rounded-lg hover:bg-amber-50 dark:hover:bg-stone-700 transition-colors"
+                      className="w-full p-4 text-left border border-amber-100 dark:border-stone-800 rounded-xl hover:bg-amber-50 dark:hover:bg-stone-900/50 hover:border-amber-300 transition-all group shadow-sm"
                     >
-                      <h3 className="font-medium text-gray-900 dark:text-stone-100">{collection.title}</h3>
-                      <p className="text-sm text-gray-600 dark:text-stone-400 mt-1">
+                      <h3 className="font-bold text-gray-900 dark:text-stone-100 group-hover:text-amber-700 dark:group-hover:text-amber-500">{collection.title}</h3>
+                      <p className="text-sm text-gray-500 dark:text-stone-500 mt-1">
                         {collection.books.length} {collection.books.length === 1 ? 'книга' : 'книг'}
                       </p>
                     </button>

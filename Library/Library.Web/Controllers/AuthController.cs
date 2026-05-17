@@ -1,4 +1,4 @@
-﻿using Library.Application.Services;
+using Library.Application.Services;
 using Library.Web.DTO.Auth;
 using Library.Web.Extensions;
 using Microsoft.AspNetCore.Authorization;
@@ -23,7 +23,7 @@ namespace Library.Web.Controllers
         {
             try
             {
-                var result = await _service.RegisterAsync(dto.Login, dto.Email, dto.Password);
+                var result = await _service.RegisterAsync(dto.Login, dto.Email, dto.Password, dto.BirthDate);
                 return Ok(new
                 {
                     token = result.token,
@@ -33,6 +33,7 @@ namespace Library.Web.Controllers
                         login = result.user.Login,
                         email = result.user.Email,
                         avatarFile = result.user.AvatarFile,
+                        birthDate = result.user.BirthDate,
                         role = result.user.RoleName.ToLower() == "admin" ? "admin" : "client",
                         isSubscribed = result.user.IsSubscribed,
                         subscriptionExpiresAt = result.user.SubscriptionExpiresAt
@@ -63,11 +64,39 @@ namespace Library.Web.Controllers
                     login = auth.user.Login,
                     email = auth.user.Email,
                     avatarFile = auth.user.AvatarFile,
+                    birthDate = auth.user.BirthDate,
                     role = auth.user.RoleName.ToLower() == "admin" ? "admin" : "client",
                     isSubscribed = auth.user.IsSubscribed,
                     subscriptionExpiresAt = auth.user.SubscriptionExpiresAt
                 }
             });
+        }
+
+        [Authorize]
+        [HttpPost("update-account")]
+        public async Task<IActionResult> UpdateAccount(UpdateAccountDto dto)
+        {
+            try
+            {
+                var userId = User.GetUserId();
+                var user = await _service.UpdateAccountAsync(userId, dto.Login, dto.Email, dto.CurrentPassword, dto.NewPassword, dto.BirthDate);
+                
+                return Ok(new
+                {
+                    id = user.Id,
+                    login = user.Login,
+                    email = user.Email,
+                    avatarFile = user.AvatarFile,
+                    birthDate = user.BirthDate,
+                    role = user.RoleName.ToLower() == "admin" ? "admin" : "client",
+                    isSubscribed = user.IsSubscribed,
+                    subscriptionExpiresAt = user.SubscriptionExpiresAt
+                });
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
         }
 
         [Authorize]
@@ -84,6 +113,7 @@ namespace Library.Web.Controllers
                 login = user.Login,
                 email = user.Email,
                 avatarFile = user.AvatarFile,
+                birthDate = user.BirthDate,
                 role = user.RoleName.ToLower() == "admin" ? "admin" : "client",
                 isSubscribed = user.IsSubscribed,
                 subscriptionExpiresAt = user.SubscriptionExpiresAt

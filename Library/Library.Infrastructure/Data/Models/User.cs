@@ -12,6 +12,8 @@ public partial class User
 
     public string? AvatarFile { get; set; }
 
+    public DateTime? BirthDate { get; set; }
+
     public string NormalizedEmail { get; set; } = null!;
 
     public string NormalizedLogin { get; set; } = null!;

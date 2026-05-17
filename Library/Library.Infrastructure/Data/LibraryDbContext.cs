@@ -79,6 +79,9 @@ public partial class LibraryDbContext : DbContext
             entity.Property(e => e.ReadCount)
                 .HasColumnName("read_count")
                 .HasDefaultValue(0);
+            entity.Property(e => e.AgeRestriction)
+                .HasColumnName("age_restriction")
+                .HasDefaultValue(0);
 
             entity.HasMany(d => d.Authors).WithMany(p => p.Books)
                 .UsingEntity<Dictionary<string, object>>(
@@ -304,6 +307,8 @@ public partial class LibraryDbContext : DbContext
             entity.Property(e => e.AvatarFile)
                 .HasColumnType("character varying")
                 .HasColumnName("avatar_file");
+            entity.Property(e => e.BirthDate)
+                .HasColumnName("birth_date");
             entity.Property(e => e.Login)
                 .HasColumnType("character varying")
                 .HasColumnName("login");

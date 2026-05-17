@@ -12,6 +12,7 @@ public static class UserMapper
             ef.Login,
             ef.Email,
             ef.AvatarFile,
+            ef.BirthDate,
             ef.Role?.Role1 ?? "User",
             ef.IsSubscribed,
             ef.SubscriptionExpiresAt

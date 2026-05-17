@@ -1,4 +1,4 @@
-﻿using Library.Domain.Entities;
+using Library.Domain.Entities;
 using EfBook = Library.Infrastructure.Data.Models.Book;
 
 namespace Library.Infrastructure.Mappers;
@@ -13,14 +13,15 @@ public static class BookMapper
             ef.TextFile,
             ef.CoverFile,
             ef.Description,
+            ef.AgeRestriction,
             ef.Rating,
             ef.Reviews.Count,
             ef.ReadCount
         );
 
         book.Authors.AddRange(
-        ef.Authors.Select(AuthorMapper.ToDomain)
-    );
+            ef.Authors.Select(AuthorMapper.ToDomain)
+        );
 
         book.Genres.AddRange(
             ef.Genres.Select(GenreMapper.ToDomain)
@@ -41,6 +42,7 @@ public static class BookMapper
             TextFile = domain.TextFile,
             CoverFile = domain.CoverFile,
             Description = domain.Description,
+            AgeRestriction = domain.AgeRestriction,
         };
     }
 }

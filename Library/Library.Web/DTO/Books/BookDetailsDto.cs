@@ -11,6 +11,7 @@ namespace Library.Web.DTO.Books
         public string TextFile { get; set; } = null!;
         public string? CoverFile { get; set; }
         public string? Description { get; set; }
+        public int AgeRestriction { get; set; }
         public double AverageRating { get; set; }
         public int ReviewsCount { get; set; }
         public int ReadCount { get; set; }

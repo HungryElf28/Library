@@ -243,6 +243,7 @@ namespace Library.Web.Controllers
                     u.Login,
                     u.Email,
                     u.AvatarFile,
+                    u.BirthDate,
                     role = u.RoleName.ToLower() == "admin" ? "admin" : "client",
                     u.IsSubscribed,
                     u.SubscriptionExpiresAt

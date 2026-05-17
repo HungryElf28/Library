@@ -1,4 +1,4 @@
-﻿using Library.Application.Services;
+using Library.Application.Services;
 using Library.Domain.Entities;
 using Library.Domain.Interfaces;
 using Library.Web.DTO.Authors;
@@ -62,6 +62,7 @@ namespace Library.Web.Controllers
                 TextFile = book.TextFile,
                 CoverFile = book.CoverFile,
                 Description = book.Description,
+                AgeRestriction = book.AgeRestriction,
                 AverageRating = book.AverageRating,
                 ReviewsCount = book.ReviewsCount,
                 ReadCount = book.ReadCount,
@@ -85,6 +86,7 @@ namespace Library.Web.Controllers
                 b.Id,
                 b.Title,
                 b.CoverFile,
+                b.AgeRestriction,
                 Authors = b.Authors.Select(a => a.Name).ToList(),
                 Genres = b.Genres.Select(g => g.Name).ToList()
             }));
@@ -99,6 +101,7 @@ namespace Library.Web.Controllers
                 b.Id,
                 b.Title,
                 b.CoverFile,
+                b.AgeRestriction,
                 Authors = b.Authors.Select(a => a.Name).ToList(),
                 Genres = b.Genres.Select(g => g.Name).ToList(),
                 b.AverageRating,
@@ -122,7 +125,7 @@ namespace Library.Web.Controllers
                 ? null
                 : await SaveUploadedFile(dto.CoverFile, uploadsPath);
 
-            var book = BuildBook(0, dto.Title, textUrl, coverUrl, dto.Description, dto.AuthorIds, dto.GenreIds, dto.TagIds);
+            var book = BuildBook(0, dto.Title, textUrl, coverUrl, dto.Description, dto.AgeRestriction, dto.AuthorIds, dto.GenreIds, dto.TagIds);
 
             var created = await _service.AddAsync(book);
 
@@ -158,7 +161,7 @@ namespace Library.Web.Controllers
                 _service.DeleteFileIfExists(existing.TextFile);
             }
 
-            var book = BuildBook(id, dto.Title, textUrl, coverUrl, dto.Description, dto.AuthorIds, dto.GenreIds, dto.TagIds);
+            var book = BuildBook(id, dto.Title, textUrl, coverUrl, dto.Description, dto.AgeRestriction, dto.AuthorIds, dto.GenreIds, dto.TagIds);
 
             await _service.UpdateAsync(book);
 
@@ -199,6 +202,7 @@ namespace Library.Web.Controllers
                     b.Id,
                     b.Title,
                     b.CoverFile,
+                    b.AgeRestriction,
                     Authors = b.Authors.Select(a => a.Name).ToList(),
                     Genres = b.Genres.Select(g => g.Name).ToList(),
                     averageRating = b.AverageRating
@@ -241,11 +245,12 @@ namespace Library.Web.Controllers
             string textUrl,
             string? coverUrl,
             string? description,
+            int ageRestriction,
             List<int> authorIds,
             List<int> genreIds,
             List<int> tagIds)
         {
-            var book = new Book(id, title, textUrl, coverUrl, description);
+            var book = new Book(id, title, textUrl, coverUrl, description, ageRestriction);
 
             book.Authors.AddRange(authorIds.Select(authorId => new Author(authorId, "", "", "")));
             book.Genres.AddRange(genreIds.Select(genreId => new Genre(genreId, "")));

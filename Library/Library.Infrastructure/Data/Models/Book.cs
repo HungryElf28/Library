@@ -12,6 +12,8 @@ public partial class Book
 
     public string? Description { get; set; }
 
+    public int AgeRestriction { get; set; }
+
     public double Rating { get; set; }
 
     public int ReadCount { get; set; }

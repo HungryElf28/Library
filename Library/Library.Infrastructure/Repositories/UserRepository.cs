@@ -1,4 +1,4 @@
-﻿using Library.Domain.Entities;
+using Library.Domain.Entities;
 using Library.Domain.Interfaces;
 using Library.Infrastructure.Data;
 using Library.Infrastructure.Mappers;
@@ -21,6 +21,7 @@ public class UserRepository : IUserRepository
         {
             Login = user.Login,
             Email = user.Email,
+            BirthDate = user.BirthDate.HasValue ? DateTime.SpecifyKind(user.BirthDate.Value, DateTimeKind.Utc) : null,
             PasswordHash = passwordHash,
             NormalizedLogin = user.Login.ToUpper(),
             NormalizedEmail = user.Email.ToUpper(),
@@ -234,7 +235,7 @@ public class UserRepository : IUserRepository
         if (user == null) throw new Exception("User not found");
 
         user.IsSubscribed = isSubscribed;
-        user.SubscriptionExpiresAt = expiresAt;
+        user.SubscriptionExpiresAt = expiresAt.HasValue ? DateTime.SpecifyKind(expiresAt.Value, DateTimeKind.Utc) : null;
 
         await _context.SaveChangesAsync();
     }
@@ -267,6 +268,38 @@ public class UserRepository : IUserRepository
         user.RoleId = roleId;
 
         await _context.SaveChangesAsync();
+    }
+
+    public async Task UpdateAccountAsync(int userId, string login, string email, string? passwordHash, DateTime? birthDate)
+    {
+        var user = await _context.Users.FindAsync(userId);
+        if (user == null) throw new Exception("User not found");
+
+        user.Login = login;
+        user.NormalizedLogin = login.ToUpper();
+        user.Email = email;
+        user.NormalizedEmail = email.ToUpper();
+        
+        if (birthDate.HasValue)
+        {
+            user.BirthDate = DateTime.SpecifyKind(birthDate.Value, DateTimeKind.Utc);
+        }
+        else
+        {
+            user.BirthDate = null;
+        }
+        
+        if (passwordHash != null)
+        {
+            user.PasswordHash = passwordHash;
+        }
+
+        await _context.SaveChangesAsync();
+    }
+
+    private async Task<Data.Models.User?> GetEfByIdAsync(int id)
+    {
+        return await _context.Users.FindAsync(id);
     }
 
     public async Task<List<User>> GetAllAsync()

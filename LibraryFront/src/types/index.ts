@@ -3,6 +3,7 @@ export interface User {
   login: string;
   email: string;
   avatarFile?: string;
+  birthDate?: string;
   role: 'guest' | 'client' | 'admin';
   isSubscribed?: boolean;
   subscriptionExpiresAt?: string;
@@ -31,6 +32,7 @@ export interface Book {
   textFile: string;
   coverFile?: string;
   description?: string;
+  ageRestriction?: number;
   authors: Author[];
   genres: Genre[];
   tags: Tag[];
@@ -43,6 +45,7 @@ export interface BookListItem {
   id: number;
   title: string;
   coverFile?: string;
+  ageRestriction?: number;
   authors?: string[];
   genres?: string[];
   averageRating?: number;
@@ -96,6 +99,15 @@ export interface RegisterDto {
   login: string;
   email: string;
   password: string;
+  birthDate?: string;
+}
+
+export interface UpdateAccountDto {
+  login?: string;
+  email?: string;
+  currentPassword?: string;
+  newPassword?: string;
+  birthDate?: string;
 }
 
 export interface CreateReviewDto {
@@ -108,6 +120,7 @@ export interface CreateBookDto {
   textFile?: File | string;
   coverFile?: File | string;
   description?: string;
+  ageRestriction?: number;
   authorIds: number[];
   genreIds: number[];
   tagIds: number[];

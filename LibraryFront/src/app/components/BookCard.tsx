@@ -41,6 +41,12 @@ export function BookCard({ book, onClick, onFavoriteToggle, isFavorite, showFavo
           </div>
         )}
 
+        {book.ageRestriction !== undefined && book.ageRestriction > 0 && (
+          <div className="absolute top-2 left-2 px-1.5 py-0.5 bg-black/60 backdrop-blur-sm rounded text-[10px] font-bold text-white border border-white/20">
+            {book.ageRestriction}+
+          </div>
+        )}
+
         {showFavoriteButton && (
           <button
             onClick={handleFavoriteClick}

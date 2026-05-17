@@ -106,6 +106,17 @@ export const api = {
       return result;
     },
 
+    async updateAccount(data: UpdateAccountDto): Promise<User> {
+      const response = await fetchWithAuth(`${API_BASE}/api/auth/update-account`, {
+        method: 'POST',
+        body: JSON.stringify(data),
+      });
+
+      const result = await safeJsonResponse<User>(response);
+      currentUser = result;
+      return result;
+    },
+
     async logout(): Promise<void> {
       localStorage.removeItem(STORAGE_KEY);
       currentUser = null;
