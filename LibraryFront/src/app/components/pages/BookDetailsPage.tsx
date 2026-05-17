@@ -558,14 +558,14 @@ export function BookDetailsPage({
                             </div>
                           </div>
                           {review.text && (
-                            <div className="relative">
-                              <p className={`text-gray-700 dark:text-stone-300 leading-relaxed whitespace-pre-wrap ${!expandedReviews[review.id] ? 'line-clamp-4' : ''}`}>
+                            <div className="mt-2 w-full overflow-hidden">
+                              <p className={`text-gray-700 dark:text-stone-300 leading-relaxed whitespace-pre-wrap break-words ${!expandedReviews[review.id] ? 'line-clamp-4' : ''}`}>
                                 {review.text}
                               </p>
-                              {review.text.length > 200 && (
+                              {(review.text.length > 100 || review.text.split('\n').length > 4) && (
                                 <button
                                   onClick={() => toggleReviewExpand(review.id)}
-                                  className="mt-2 text-sm font-bold text-amber-600 hover:text-amber-700 transition-colors"
+                                  className="mt-2 text-sm font-bold text-amber-600 hover:text-amber-700 transition-colors inline-flex items-center"
                                 >
                                   {expandedReviews[review.id] ? 'Свернуть' : 'Читать полностью'}
                                 </button>
