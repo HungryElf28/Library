@@ -74,7 +74,7 @@ public class AuthorRepository : IAuthorRepository
             .FirstOrDefaultAsync(a => a.Id == newAuthor.Id);
 
         if (oldAuthor == null)
-            throw new Exception("Book not found");
+            throw new Exception("Author not found");
 
         oldAuthor.Name = newAuthor.Name;
         oldAuthor.Bio = newAuthor.Bio;

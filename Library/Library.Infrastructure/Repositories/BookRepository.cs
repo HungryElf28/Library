@@ -79,6 +79,7 @@ public class BookRepository : IBookRepository
         oldBook.TextFile = newBook.TextFile;
         oldBook.CoverFile = newBook.CoverFile;
         oldBook.Description = newBook.Description;
+        oldBook.AgeRestriction = newBook.AgeRestriction;
 
         var authorIds = newBook.Authors.Select(a => a.Id).ToList();
         var authors = await _context.Authors
