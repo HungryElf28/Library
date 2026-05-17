@@ -242,7 +242,7 @@ export function BookDetailsPage({
       </div>
 
       <div className="bg-card rounded-lg shadow-sm border border-amber-200 dark:border-stone-700 overflow-hidden">
-        <div className="grid md:grid-cols-3 gap-8 p-6 md:p-8">
+        <div className="grid md:grid-cols-3 gap-8 p-6 md:p-8 items-start">
           <div className="md:col-span-1">
             <div className="sticky top-20">
               {coverUrl ? (

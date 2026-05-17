@@ -158,15 +158,17 @@ export function BookEditModal({ book, onClose, onSave }: BookEditModalProps) {
                 <label className="block text-sm font-bold text-gray-700 dark:text-stone-300 mb-2 uppercase tracking-wider">
                   Возрастное ограничение
                 </label>
-                <input
-                  type="number"
-                  min="0"
-                  max="100"
+                <select
                   value={formData.ageRestriction}
                   onChange={(e) => setFormData({ ...formData, ageRestriction: parseInt(e.target.value) || 0 })}
                   className="w-full px-4 py-3 border border-amber-300 dark:border-stone-600 bg-card text-gray-900 dark:text-stone-100 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-500 transition-shadow"
-                  placeholder="Например: 16"
-                />
+                >
+                  <option value="0">0+</option>
+                  <option value="6">6+</option>
+                  <option value="12">12+</option>
+                  <option value="16">16+</option>
+                  <option value="18">18+</option>
+                </select>
               </div>
 
               <div>
