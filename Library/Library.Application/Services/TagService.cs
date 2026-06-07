@@ -38,11 +38,18 @@ namespace Library.Application.Services
 
         public async Task UpdateAsync(Tag tag)
         {
+            var exists = await _repo.GetByIdAsync(tag.Id);
+            if (exists == null)
+                throw new Exception("Tag not found");
             await _repo.UpdateAsync(tag);
         }
 
         public async Task DeleteAsync(int id)
         {
+            var tag = await _repo.GetByIdAsync(id);
+
+            if (tag == null)
+                throw new Exception("Tag not found");
             await _repo.DeleteAsync(id);
         }
     }

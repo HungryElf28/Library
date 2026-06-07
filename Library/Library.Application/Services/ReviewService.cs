@@ -30,6 +30,11 @@ namespace Library.Application.Services
 
         public async Task Delete(int id)
         {
+            var review = await _repo.GetByIdAsync(id);
+
+            if (review == null)
+                throw new Exception("Review not found");
+
             await _repo.DeleteAsync(id);
         }
     }

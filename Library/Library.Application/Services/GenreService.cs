@@ -38,11 +38,18 @@ namespace Library.Application.Services
 
         public async Task UpdateAsync(Genre genre)
         {
+            var exists = await _repo.GetByIdAsync(genre.Id);
+            if (exists == null)
+                throw new Exception("Genre not found");
             await _repo.UpdateAsync(genre);
         }
 
         public async Task DeleteAsync(int id)
         {
+            var genre = await _repo.GetByIdAsync(id);
+
+            if (genre == null)
+                throw new Exception("Genre not found");
             await _repo.DeleteAsync(id);
         }
     }

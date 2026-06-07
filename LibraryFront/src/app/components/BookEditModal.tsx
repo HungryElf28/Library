@@ -193,7 +193,7 @@ export function BookEditModal({ book, onClose, onSave }: BookEditModalProps) {
                 
                 <div className="space-y-6">
                   <div>
-                    <span className="block text-xs font-medium text-gray-500 dark:text-stone-400 mb-2">Текстовый файл (epub, fb2, txt...)*</span>
+                    <span className="block text-xs font-medium text-gray-500 dark:text-stone-400 mb-2">Текстовый файл (epub)*</span>
                     <input
                       type="file"
                       accept=".epub,application/epub+zip,.fb2,application/x-fictionbook+xml,.txt,text/plain,.rtf,application/rtf,.pdf,application/pdf,.mobi,application/x-mobipocket-ebook,.azw3,application/vnd.amazon.ebook"
