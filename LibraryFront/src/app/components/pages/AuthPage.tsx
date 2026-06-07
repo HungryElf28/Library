@@ -45,6 +45,22 @@ export function AuthPage({ onSuccess, onBack }: AuthPageProps) {
     e.preventDefault();
     setError('');
 
+    const email = registerForm.email;
+    const hasAt = email.includes('@');
+    const hasDot = email.includes('.');
+    if (!hasAt && !hasDot) {
+      setError('Email должен содержать символ "@" и точку "."');
+      return;
+    }
+    if (!hasAt) {
+      setError('Email должен содержать символ "@"');
+      return;
+    }
+    if (!hasDot) {
+      setError('Email должен содержать точку "."');
+      return;
+    }
+
     if (registerForm.password !== registerForm.confirmPassword) {
       setError('Пароли не совпадают');
       return;
@@ -52,6 +68,23 @@ export function AuthPage({ onSuccess, onBack }: AuthPageProps) {
 
     if (registerForm.password.length < 6) {
       setError('Пароль должен содержать минимум 6 символов');
+      return;
+    }
+
+    const password = registerForm.password;
+    const hasLower = /[a-z]/.test(password);
+    const hasUpper = /[A-Z]/.test(password);
+    const hasDigit = /\d/.test(password);
+    const hasSpecial = /[\W_]/.test(password);
+
+    const missing = [];
+    if (!hasLower) missing.push('минимум одну строчную латинскую букву');
+    if (!hasUpper) missing.push('минимум одну прописную латинскую букву');
+    if (!hasDigit) missing.push('минимум одну цифру');
+    if (!hasSpecial) missing.push('минимум один спецсимвол');
+
+    if (missing.length > 0) {
+      setError('В пароле не хватает: ' + missing.join(', '));
       return;
     }
 

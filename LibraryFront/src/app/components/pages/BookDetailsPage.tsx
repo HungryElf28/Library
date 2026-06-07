@@ -454,14 +454,28 @@ export function BookDetailsPage({
                   </div>
 
                   <div className="mb-6">
-                    <label className="block text-sm font-bold text-gray-700 dark:text-stone-300 mb-2 uppercase tracking-wider">
-                      Комментарий
-                    </label>
+                    <div className="flex justify-between items-center mb-2">
+                      <label className="block text-sm font-bold text-gray-700 dark:text-stone-300 uppercase tracking-wider">
+                        Комментарий
+                      </label>
+                      <span className={`text-xs font-semibold px-2 py-0.5 rounded-full transition-all ${
+                        (userReview.text || '').length >= 3000
+                          ? 'bg-red-100 text-red-700 dark:bg-red-950/50 dark:text-red-400 font-bold animate-pulse'
+                          : (userReview.text || '').length > 2700 
+                          ? 'bg-red-50 text-red-600 dark:bg-red-950/30 dark:text-red-400' 
+                          : (userReview.text || '').length > 2400
+                          ? 'bg-amber-50 text-amber-600 dark:bg-amber-950/30 dark:text-amber-400'
+                          : 'bg-stone-100 text-gray-500 dark:bg-stone-800 dark:text-stone-400'
+                      }`}>
+                        {(userReview.text || '').length} / 3000
+                      </span>
+                    </div>
                     <textarea
-                      value={userReview.text}
+                      value={userReview.text || ''}
                       onChange={(e) => setUserReview({ ...userReview, text: e.target.value })}
                       rows={4}
-                      className="w-full px-4 py-3 border border-amber-300 dark:border-stone-600 bg-card rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-500 transition-shadow"
+                      maxLength={3000}
+                      className="w-full px-4 py-3 border border-amber-300 dark:border-stone-600 bg-card text-gray-900 dark:text-stone-100 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-500 transition-shadow"
                       placeholder="Что вам понравилось или не понравилось в этой книге?"
                     />
                   </div>
