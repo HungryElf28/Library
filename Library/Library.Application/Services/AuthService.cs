@@ -2,6 +2,7 @@ using Library.Domain.Entities;
 using Library.Domain.Interfaces;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.IdentityModel.Tokens;
+using Microsoft.Extensions.Configuration;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
@@ -11,10 +12,12 @@ namespace Library.Application.Services;
 public class AuthService
 {
     private readonly IUserRepository _repo;
+    private readonly IConfiguration _configuration;
 
-    public AuthService(IUserRepository repo)
+    public AuthService(IUserRepository repo,IConfiguration configuration)
     {
         _repo = repo;
+        _configuration = configuration;
     }
 
     public async Task<(string token, User user)> RegisterAsync(string login, string email, string password, DateTime? birthDate = null)
@@ -67,8 +70,8 @@ public class AuthService
             new Claim(ClaimTypes.Role, user.RoleName)
         };
 
-        var key = new SymmetricSecurityKey(
-            Encoding.UTF8.GetBytes("SUPER_SECRET_KEY_THAT_IS_AT_LEAST_32_CHARACTERS_LONG"));
+        var secretKey = _configuration["Jwt:SecretKey"];
+        var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secretKey));
 
         var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
 

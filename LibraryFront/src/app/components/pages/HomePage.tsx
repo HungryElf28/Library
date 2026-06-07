@@ -107,7 +107,6 @@ export function HomePage({ onBookClick, onNavigate }: HomePageProps) {
 
   return (
     <div className="space-y-12">
-      {/* Hero Section */}
       {showHero && (
         <section className="bg-amber-600 rounded-2xl p-8 text-white transition-all duration-500 overflow-hidden">
           <h1 className="text-4xl font-bold mb-4">Добро пожаловать в Library</h1>
@@ -117,7 +116,6 @@ export function HomePage({ onBookClick, onNavigate }: HomePageProps) {
         </section>
       )}
 
-      {/* Global Most Read */}
       <BookSection
         title="Самые читаемые"
         icon={<TrendingUp className="w-6 h-6 text-amber-600" />}
@@ -128,7 +126,6 @@ export function HomePage({ onBookClick, onNavigate }: HomePageProps) {
         userRole={user?.role}
       />
 
-      {/* Recommendations if logged in */}
       {user && user.role !== 'guest' && recommendations.length > 0 && (
         <BookSection
           title="Рекомендуем вам"
@@ -141,7 +138,6 @@ export function HomePage({ onBookClick, onNavigate }: HomePageProps) {
         />
       )}
 
-      {/* Most Read by Genre */}
       {randomGenre && mostReadGenre.length > 0 && (
         <BookSection
           title={`Популярно в жанре: ${randomGenre.name}`}
@@ -161,7 +157,7 @@ export function HomePage({ onBookClick, onNavigate }: HomePageProps) {
       {/* Most Read by Author */}
       {randomAuthor && mostReadAuthor.length > 0 && (
         <BookSection
-          title={`Лучшее от автора: ${randomAuthor.name}`}
+          title={`Популярно у автора: ${randomAuthor.name}`}
           icon={<User className="w-6 h-6 text-amber-600" />}
           books={mostReadAuthor}
           onBookClick={onBookClick}

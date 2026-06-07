@@ -29,6 +29,9 @@ namespace Library.Application.Services
 
         public async Task<Author> AddAsync(Author author)
         {
+            if (string.IsNullOrWhiteSpace(author.Name))
+                throw new Exception("Author name is required");
+
             var exists = await _repo.ExistsByNameAsync(author.Name);
 
             if (exists)
@@ -39,11 +42,21 @@ namespace Library.Application.Services
 
         public async Task UpdateAsync(Author author)
         {
+            var existing = await _repo.GetByIdAsync(author.Id);
+
+            if (existing == null)
+                throw new Exception("Author not found");
+
             await _repo.UpdateAsync(author);
         }
 
         public async Task DeleteAsync(int id)
         {
+            var author = await _repo.GetByIdAsync(id);
+
+            if (author == null)
+                throw new Exception("Author not found");
+
             await _repo.DeleteAsync(id);
         }
     }
