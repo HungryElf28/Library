@@ -52,6 +52,26 @@ export function SettingsPage() {
     setUpdatingAccount(true);
     setUpdatingAccountError('');
     setUpdatingAccountSuccess('');
+
+    const email = emailForm.email;
+    const hasAt = email.includes('@');
+    const hasDot = email.includes('.');
+    if (!hasAt && !hasDot) {
+      setUpdatingAccountError('Email должен содержать символ "@" и точку "."');
+      setUpdatingAccount(false);
+      return;
+    }
+    if (!hasAt) {
+      setUpdatingAccountError('Email должен содержать символ "@"');
+      setUpdatingAccount(false);
+      return;
+    }
+    if (!hasDot) {
+      setUpdatingAccountError('Email должен содержать точку "."');
+      setUpdatingAccount(false);
+      return;
+    }
+
     try {
       await api.auth.updateAccount({ email: emailForm.email });
       await refreshUser();
@@ -85,6 +105,29 @@ export function SettingsPage() {
       setUpdatingAccountError('Пароли не совпадают');
       return;
     }
+
+    if (passwordForm.newPassword.length < 6) {
+      setUpdatingAccountError('Новый пароль должен содержать минимум 6 символов');
+      return;
+    }
+
+    const password = passwordForm.newPassword;
+    const hasLower = /[a-z]/.test(password);
+    const hasUpper = /[A-Z]/.test(password);
+    const hasDigit = /\d/.test(password);
+    const hasSpecial = /[\W_]/.test(password);
+
+    const missing = [];
+    if (!hasLower) missing.push('минимум одну строчную латинскую букву');
+    if (!hasUpper) missing.push('минимум одну прописную латинскую букву');
+    if (!hasDigit) missing.push('минимум одну цифру');
+    if (!hasSpecial) missing.push('минимум один спецсимвол');
+
+    if (missing.length > 0) {
+      setUpdatingAccountError('В новом пароле не хватает: ' + missing.join(', '));
+      return;
+    }
+
     setUpdatingAccount(true);
     setUpdatingAccountError('');
     setUpdatingAccountSuccess('');
